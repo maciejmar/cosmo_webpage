@@ -1,0 +1,161 @@
+<nav class="navbar" [class.scrolled]="isScrolled">
+  <div class="nav-content">
+    <div class="logo">Cosmopolish</div>
+    <ul class="nav-links">
+      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">Home</a></li>
+      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">About</a></li>
+      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">Work</a></li>
+      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">Awards</a></li>
+      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section id="home" class="hero">
+  <div class="hero-background">
+    <div class="floating-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
+    </div>
+  </div>
+  <div class="hero-content">
+    <h1 class="hero-title">
+      <span class="floating-text">Michal</span>
+      <span class="floating-text delay-1">Orzechowski</span>
+    </h1>
+    <p class="hero-subtitle fade-in">Journalist • Writer • Human Rights Activist</p>
+    <div class="hero-cta fade-in">
+      <button class="btn-primary" (click)="scrollToSection('about')">Discover More</button>
+      <button class="btn-secondary" (click)="scrollToSection('contact')">Get in Touch</button>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <div class="mouse"></div>
+  </div>
+</section>
+
+<section id="about" class="about">
+  <div class="container">
+    <h2 class="section-title slide-up">About</h2>
+    <div class="about-content">
+      <div class="about-text slide-up">
+        <p class="lead">Polish journalist, writer, and dedicated human rights activist with a strong commitment to freedom and democracy.</p>
+        <p>Michal Orzechowski publishes extensively in both Polish and English media, bringing critical issues to international attention. His work spans multiple formats including books, film scripts, and comprehensive human rights reports.</p>
+        <p>With deep experience working alongside the EU Parliament, Michal has been instrumental in advancing human rights causes, including initiating the Polish Parliamentary Caucus for Tibet.</p>
+      </div>
+      <div class="about-image slide-up">
+        <div class="image-placeholder">
+          <div class="image-decoration"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="work" class="work">
+  <div class="container">
+    <h2 class="section-title slide-up">Professional Work</h2>
+
+    <div class="work-grid">
+      <div class="card">
+        <div class="card-icon">📰</div>
+        <h3>Journalism</h3>
+        <p>Published in various prestigious magazines and media outlets, covering critical social and political issues.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🎬</div>
+        <h3>Film & Documentary</h3>
+        <p>Script writer for "Wings of Freedom 1920" and director of "Casus Belli – who needs this war?"</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">📚</div>
+        <h3>Books</h3>
+        <p>"I" (2004) and "Free Tibet free China" (2008) - exploring themes of freedom and human rights.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🌍</div>
+        <h3>Human Rights</h3>
+        <p>Authored comprehensive reports and worked with EU Parliament on international human rights issues.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🕊️</div>
+        <h3>Tibet Advocacy</h3>
+        <p>Initiated Polish Parliamentary Caucus for Tibet, advancing awareness and support for Tibetan freedom.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">✍️</div>
+        <h3>Bilingual Publications</h3>
+        <p>Contributing to both Polish and English media, bridging cultural and linguistic boundaries.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="awards" class="awards">
+  <div class="container">
+    <h2 class="section-title slide-up">Recognition & Awards</h2>
+
+    <div class="timeline">
+      <div class="timeline-item slide-up">
+        <div class="timeline-year">2019</div>
+        <div class="timeline-content">
+          <h3>Badge of Honor</h3>
+          <p>Anti-communist Opposition Activist recognition for dedication to democratic values and freedom.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item slide-up">
+        <div class="timeline-year">2008</div>
+        <div class="timeline-content">
+          <h3>City of Warszawa Merit Award</h3>
+          <p>Recognized for outstanding contributions to the city and its cultural landscape.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="contact">
+  <div class="container">
+    <h2 class="section-title slide-up">Get in Touch</h2>
+
+    <div class="contact-content">
+      <div class="contact-info slide-up">
+        <div class="contact-item">
+          <div class="contact-icon">📧</div>
+          <div>
+            <h3>Email</h3>
+            <a href="mailto:worldsolidarity@interia.pl">worldsolidarity&#64;interia.pl</a>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon">🐦</div>
+          <div>
+            <h3>Twitter</h3>
+            <a href="https://twitter.com/CosmoPolishNET" target="_blank" rel="noopener">&#64;CosmoPolishNET</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-quote slide-up">
+        <blockquote>
+          "Freedom is not given, it is won through persistent dedication and unwavering commitment to human rights."
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>&copy; 2025 Cosmopolish. All rights reserved.</p>
+  </div>
+</footer>
