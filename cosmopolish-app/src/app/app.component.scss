@@ -96,6 +96,8 @@
   right: 0;
   bottom: 0;
   overflow: hidden;
+  
+  
 }
 
 .floating-shapes {
@@ -240,7 +242,7 @@
 }
 
 .btn-secondary:hover {
-  background: white;
+  background: rgb(147, 185, 241);
   color: #667eea;
   transform: translateY(-3px);
 }
@@ -333,6 +335,7 @@
   width: 100%;
   height: 500px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --img: url( '../../assets/Copy_of_HHDL-Orzechowski2.jpg');
   border-radius: 20px;
   position: relative;
   overflow: hidden;
@@ -372,13 +375,10 @@
 }
 
 .card {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 20px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   opacity: 0;
   transform: translateY(30px);
+  border-radius: 5%;
 }
 
 .card.visible {
@@ -410,7 +410,7 @@
 .awards {
   padding: 8rem 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: rgb(221, 185, 185);
 }
 
 .awards .section-title {
@@ -421,6 +421,7 @@
   max-width: 800px;
   margin: 0 auto;
   position: relative;
+  background-color: #758699;
 }
 
 .timeline::before {
@@ -484,7 +485,7 @@
 
 .contact {
   padding: 8rem 0;
-  background: #f8f9fa;
+  background: #b7d2ec;
 }
 
 .contact-content {
@@ -624,4 +625,135 @@
   .section-title {
     font-size: 2rem;
   }
+}
+
+/* === HERO: animowane, warstwowe tło z obrazami === */
+#home.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  padding-top: 80px; /* miejsce na navbar */
+}
+
+/* kontener z warstwami */
+#home .hero-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#home .floating-shapes {
+  position: absolute;
+  inset: 0;
+  filter: saturate(1.1) contrast(1.05);
+}
+
+/* jedna warstwa obrazu */
+#home .shape {
+  --size: 80vmin;
+  
+  position: absolute;
+  top: 50%; left: 50%;
+  width: var(--size);
+  height: var(--size);
+  transform: translate(-50%, -50%);
+  background-image: var(--img);
+  background-size: cover;
+  background-position: center;
+  border-radius: 28px;
+  opacity: .22;
+  mix-blend-mode: screen;
+  box-shadow: 0 40px 120px rgba(0,0,0,.25);
+  animation: drift var(--speed, 60s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+  will-change: transform, opacity, filter;
+}
+
+/* 4 różne warstwy z różnymi obrazami i ruchem */
+#home .shape-1 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg'); 
+  --speed: 46s; --delay: 0s; --size: 80vmin; opacity: .25;
+}
+#home .shape-2 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --speed: 58s; --delay: -8s; --size: 70vmin; opacity: .20; filter: hue-rotate(20deg);
+}
+#home .shape-3 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --speed: 68s; --delay: -14s; --size: 90vmin; opacity: .18; filter: hue-rotate(60deg) saturate(1.2); mix-blend-mode: lighten;
+}
+#home .shape-4 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --speed: 82s; --delay: -20s; --size: 95vmin; opacity: .16; filter: hue-rotate(120deg);
+}
+
+@keyframes drift {
+  0%   { transform: translate(-60%, -55%) scale(1.00) rotate(.4deg); }
+  50%  { transform: translate(-45%, -40%) scale(1.06) rotate(-.5deg); }
+  100% { transform: translate(-40%, -60%) scale(1.10) rotate(.8deg); }
+}
+
+/* Treść ma być nad tłem */
+#home .hero-content,
+#home .scroll-indicator {
+  position: relative;
+  z-index: 2;
+}
+
+/* Wsparcie dla użytkowników z ograniczonym ruchem */
+@media (prefers-reduced-motion: reduce) {
+  #home .shape { animation: none; }
+}
+
+/* === Kolorowe tła sekcji (About/Work/Awards/Contact) === */
+#about {
+  background:
+    radial-gradient(1200px 600px at 8% 0%, rgba(255,180,204,.45), transparent 60%),
+    radial-gradient(900px 600px at 100% 10%, rgba(180,220,255,.40), transparent 60%),
+    linear-gradient(135deg, #f7e8ff 0%, #e3f0ff 100%);
+  padding: clamp(3rem, 6vw, 6rem) 0;
+}
+#work {
+  background: linear-gradient(135deg, #fff3c4 0%, #ffd1c1 100%);
+  padding: clamp(3rem, 6vw, 6rem) 0;
+}
+#awards {
+  background: linear-gradient(135deg, #66c989 0%, #33588b 100%);
+  padding: clamp(3rem, 6vw, 6rem) 0;
+}
+#contact {
+  background:
+    radial-gradient(1000px 500px at 20% 10%, rgba(180,255,230,.35), transparent 60%),
+    radial-gradient(800px 500px at 90% 0%, rgba(255,210,240,.35), transparent 60%),
+    linear-gradient(135deg, #f0f6ff 0%, #fff 100%);
+  padding: clamp(3rem, 6vw, 6rem) 0;
+}
+
+/* Opcjonalnie: szklane “karty” na tle (jeśli chcesz efekt glass) */
+.about .about-content,
+.work .work-grid,
+.awards .timeline,
+.contact .contact-content {
+  backdrop-filter: blur(6px) saturate(1.06);
+  -webkit-backdrop-filter: blur(6px);
+  background: rgba(255,255,255,0.35);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 20px;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  box-shadow: 0 20px 80px rgba(0,0,0,.12);
+}
+
+/* Subtelne animacje wejścia (jeśli używasz klas .fade-in, .slide-up) */
+.fade-in, .slide-up, .card, .timeline-item, .about-text, .about-image, .contact-info, .contact-quote {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
 }

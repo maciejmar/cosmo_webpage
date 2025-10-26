@@ -1,0 +1,37 @@
+# dependencies
+/cosmopolish-app/node_modules
+/node_modules
+
+# compiled output
+/cosmopolish-app/dist
+/cosmopolish-app/tmp
+/cosmopolish-app/out-tsc
+/cosmopolish-app/.angular
+
+# IDEs and editors (pliki w katalogu cosmopolish-app)
+/cosmopolish-app/.idea
+/cosmopolish-app/.project
+/cosmopolish-app/.classpath
+/cosmopolish-app/.c9/
+/cosmopolish-app/*.launch
+/cosmopolish-app/.settings/
+/cosmopolish-app/*.sublime-workspace
+/cosmopolish-app/.vscode/
+!/cosmopolish-app/.vscode/settings.json
+!/cosmopolish-app/.vscode/tasks.json
+!/cosmopolish-app/.vscode/launch.json
+!/cosmopolish-app/.vscode/extensions.json
+!/cosmopolish-app/.vscode/pnpm-debug.log
+
+# misc
+/cosmopolish-app/connect.lock
+/cosmopolish-app/coverage
+/cosmopolish-app/libpeerconnection.log
+/cosmopolish-app/npm-debug.log
+/cosmopolish-app/yarn-error.log
+/cosmopolish-app/testem.log
+/cosmopolish-app/typings
+
+# System Files
+.DS_Store
+Thumbs.db
