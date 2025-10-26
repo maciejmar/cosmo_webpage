@@ -638,7 +638,7 @@
   padding-top: 80px; /* miejsce na navbar */
 }
 
-/* kontener z warstwami */
+/* tło */
 #home .hero-background {
   position: absolute;
   inset: 0;
@@ -647,63 +647,89 @@
   overflow: hidden;
 }
 
+/* kontener kształtów */
 #home .floating-shapes {
   position: absolute;
   inset: 0;
   filter: saturate(1.1) contrast(1.05);
 }
 
-/* jedna warstwa obrazu */
+/* pojedynczy kształt */
 #home .shape {
   --size: 80vmin;
-  
   position: absolute;
   top: 50%; left: 50%;
-  width: var(--size);
-  height: var(--size);
+  width: var(--size); height: var(--size);
   transform: translate(-50%, -50%);
   background-image: var(--img);
   background-size: cover;
   background-position: center;
   border-radius: 28px;
-  opacity: .22;
+  opacity: var(--baseOpacity, .22);
   mix-blend-mode: screen;
   box-shadow: 0 40px 120px rgba(0,0,0,.25);
-  animation: drift var(--speed, 60s) ease-in-out infinite alternate;
-  animation-delay: var(--delay, 0s);
   will-change: transform, opacity, filter;
+
+  /* dwie animacje naraz */
+  animation-name: drift, highlightCycle;
+  animation-duration: var(--speed, 60s), 6s;
+  animation-timing-function: ease-in-out, linear;
+  animation-iteration-count: infinite, infinite;
+  animation-direction: alternate, normal;
+  animation-delay: var(--delay, 0s), var(--hlDelay, 0s);
 }
 
-/* 4 różne warstwy z różnymi obrazami i ruchem */
-#home .shape-1 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg'); 
-  --speed: 46s; --delay: 0s; --size: 80vmin; opacity: .25;
-}
-#home .shape-2 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
-  --speed: 58s; --delay: -8s; --size: 70vmin; opacity: .20; filter: hue-rotate(20deg);
-}
-#home .shape-3 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
-  --speed: 68s; --delay: -14s; --size: 90vmin; opacity: .18; filter: hue-rotate(60deg) saturate(1.2); mix-blend-mode: lighten;
-}
-#home .shape-4 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
-  --speed: 82s; --delay: -20s; --size: 95vmin; opacity: .16; filter: hue-rotate(120deg);
-}
-
+/* keyframes: ruch i podświetlenie */
 @keyframes drift {
   0%   { transform: translate(-60%, -55%) scale(1.00) rotate(.4deg); }
   50%  { transform: translate(-45%, -40%) scale(1.06) rotate(-.5deg); }
   100% { transform: translate(-40%, -60%) scale(1.10) rotate(.8deg); }
 }
 
-/* Treść ma być nad tłem */
+@keyframes highlightCycle {
+  0%      { opacity: 1; }
+  9.375%  { opacity: 1; }     /* 0.5 s przy 6 s cyklu */
+  9.375%,100% { opacity: var(--baseOpacity, .22); }
+}
+
+/* cztery warstwy */
+#home .shape-1 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --speed: 96s; --delay: 1s;
+  --size: 80vmin; --baseOpacity: .25; --hlDelay: 1s;
+}
+#home .shape-2 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --speed: 128s; --delay: -8s;
+  --size: 70vmin; --baseOpacity: .20; --hlDelay: 3.5s;
+  filter: hue-rotate(20deg);
+}
+#home .shape-3 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --speed: 68s; --delay: -14s;
+  --size: 90vmin; --baseOpacity: .18; --hlDelay: 3s;
+  filter: hue-rotate(60deg) saturate(1.2);
+  mix-blend-mode: lighten;
+}
+#home .shape-4 {
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --speed: 82s; --delay: -20s;
+  --size: 95vmin; --baseOpacity: .16; --hlDelay: 4.5s;
+  filter: hue-rotate(120deg);
+}
+
+/* Treść nad tłem */
 #home .hero-content,
 #home .scroll-indicator {
   position: relative;
   z-index: 2;
 }
+
+/* Dla osób z prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  #home .shape { animation: none; }
+}
+
 
 /* Wsparcie dla użytkowników z ograniczonym ruchem */
 @media (prefers-reduced-motion: reduce) {
