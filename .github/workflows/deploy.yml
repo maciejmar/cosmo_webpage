@@ -2,7 +2,7 @@ name: Deploy Angular to S3 + CloudFront
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
     paths:
       - "cosmopolish-app/**"   # odpalaj tylko gdy zmienisz coś w appce
   workflow_dispatch: {}
