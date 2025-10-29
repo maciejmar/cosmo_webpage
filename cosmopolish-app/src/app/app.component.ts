@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 export class AppComponent implements OnInit {
   isScrolled = false;
   activeSection = 'home';
+  isMenuOpen = false;
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
@@ -20,7 +21,10 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.observeElements();
+    window.addEventListener('keydown', this.onKeydown);
+  window.addEventListener('resize', this.onResize);
   }
+ 
 
   scrollToSection(sectionId: string) {
     const element = document.getElementById(sectionId);
@@ -61,4 +65,36 @@ export class AppComponent implements OnInit {
       });
     }, 100);
   }
+
+  toggleMenu() {
+  this.isMenuOpen = !this.isMenuOpen;
+  this.lockBodyScroll(this.isMenuOpen);
+}
+
+closeMenu() {
+  if (!this.isMenuOpen) return;
+  this.isMenuOpen = false;
+  this.lockBodyScroll(false);
+}
+
+private lockBodyScroll(lock: boolean) {
+  // zapobiegamy przewijaniu tła, gdy menu otwarte
+  document.body.style.overflow = lock ? 'hidden' : '';
+}
+
+// Zamknij na ESC
+
+
+ngOnDestroy() {
+  window.removeEventListener('keydown', this.onKeydown);
+  window.removeEventListener('resize', this.onResize);
+}
+
+onKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') this.closeMenu();
+};
+
+onResize = () => {
+  if (window.innerWidth > 768) this.closeMenu();
+};
 }

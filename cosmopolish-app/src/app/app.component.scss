@@ -187,6 +187,7 @@
 .floating-text {
   display: inline-block;
   animation: floatText 3s ease-in-out infinite;
+  opacity:0.5;
 }
 
 .floating-text.delay-1 {
@@ -205,7 +206,7 @@
 .hero-subtitle {
   font-size: 1.5rem;
   margin-bottom: 2rem;
-  opacity: 0.95;
+  opacity: 0.5;
   font-weight: 300;
 }
 
@@ -332,14 +333,59 @@
   position: relative;
 }
 
+@keyframes fade-cycle {
+  0% {
+    opacity: 0; /* START: Całkowicie niewidoczny */
+  }
+  25% {
+    opacity: 1; /* Fade-in zakończony */
+  }
+  75% {
+    opacity: 1; /* Utrzymanie widoczności */
+  }
+  100% {
+    opacity: 0; /* END: Fade-out zakończony, gotowy do powtórzenia */
+  }
+}
+
+
 .image-placeholder {
   width: 100%;
   height: 500px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --img: url( '../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  --img: url( '../../assets/michal.png');
   border-radius: 20px;
   position: relative;
-  overflow: hidden;
+  overflow:auto;
+  background-image: var(--img), linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: cover;
+  /* Właściwości animacji: */
+  animation-name: fade-cycle; /* Nazwa zdefiniowanej animacji */
+  animation-duration: 4s; /* Czas trwania jednego cyklu (np. 4 sekundy) */
+  animation-iteration-count: infinite; /* Powtarzaj w nieskończoność */
+  animation-timing-function: ease-in-out; /* Płynne przyspieszanie/zwalnianie */
+}
+
+/* Definicja podstawowego stanu niewidoczności */
+.fade-out {
+  opacity: 0;
+  transition: opacity 1s ease-in-out; /* Definiujemy płynne przejście */
+}
+
+/* Definicja stanu widoczności (fade-in) */
+.fade-in {
+  opacity: 1;
+}
+
+/* Opcjonalnie: Styl dla kontenera obrazka, jeśli nie używasz już .image-placeholder */
+.image-container {
+  width: 100%;
+  height: 500px;
+  background-image: url( '../../assets/Copy_of_HHDL-Orzechowski2.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 20px;
 }
 
 .image-decoration {
@@ -395,6 +441,7 @@
 .card-icon {
   font-size: 3rem;
   margin-bottom: 1.5rem;
+  padding:2%;
 }
 
 .card h3 {
@@ -406,6 +453,10 @@
 .card p {
   color: #666;
   line-height: 1.6;
+}
+
+.padding {
+    padding:2%;
 }
 
 .awards {
@@ -539,6 +590,10 @@
 }
 
 .contact-quote {
+    
+  width: min(100%, 720px);               /* nie wychodzi poza ekran, a na desktopie nie za szeroko */
+  margin-inline: auto;
+  padding: clamp(1rem, 4vw, 3rem);       /* mniejsze pady na telefonie, większe na desktopie */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -548,11 +603,20 @@
 }
 
 .contact-quote blockquote {
-  font-size: 1.5rem;
+  font-size: clamp(1.05rem, 3.5vw, 1.6rem);
   font-style: italic;
   color: white;
   line-height: 1.8;
   text-align: center;
+}
+@media (max-width: 420px) {
+  .contact-quote {
+    border-radius: 16px;
+    width:90%;
+  }
+  .contact-quote blockquote {
+    line-height: 1.6;                    /* odrobinę więcej powietrza */
+  }
 }
 
 .footer {
@@ -692,44 +756,140 @@
   9.375%,100% { opacity: var(--baseOpacity, .22); }
 }
 
-/* cztery warstwy */
-#home .shape-1 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
-  --speed: 96s; --delay: 1s;
-  --size: 80vmin; --baseOpacity: .25; --hlDelay: 1s;
+.hero-foreground {
+  position: absolute;
+  inset: 0;
+  z-index: 999;         /* nad .hero-content */
+  pointer-events: none; /* przyciski dalej klikalne */
+  overflow: hidden;
 }
-#home .shape-2 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
-  --speed: 128s; --delay: -8s;
-  --size: 70vmin; --baseOpacity: .20; --hlDelay: 3.5s;
-  filter: hue-rotate(20deg);
+
+/* Drugi egzemplarz shape-1 na wierzchu */
+.shape-1-fore {
+  /* bazuje na .shape — odziedziczy style, ale możemy nadpisać */
+ /* --img: url('/assets/hero-1.jpg');  PODMIEŃ na swoją ścieżkę/URL */
+  /*--size: 85vmin; */
+  position: absolute;
+  top: 50%; left: 50%;
+  width: var(--size); height: var(--size);
+  transform: translate(-50%, -50%);
+  background-image: var(--img);
+  background-size: cover;
+  background-position: center;
+  border-radius: 28px;
+  mix-blend-mode: screen;
+  /*filter: hue-rotate(8deg) saturate(1.1); */
+  box-shadow: 0 40px 120px rgba(0,0,0,.25);
+  will-change: transform, opacity, filter;
+  animation: driftFore 60s ease-in-out infinite;
+  opacity: 0; /* default ukryty poza "przebiciem" */
 }
-#home .shape-3 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
-  --speed: 68s; --delay: -14s;
-  --size: 90vmin; --baseOpacity: .18; --hlDelay: 3s;
-  filter: hue-rotate(60deg) saturate(1.2);
-  mix-blend-mode: lighten;
-}
-#home .shape-4 {
-  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg');
-  --speed: 82s; --delay: -20s;
-  --size: 95vmin; --baseOpacity: .16; --hlDelay: 4.5s;
-  filter: hue-rotate(120deg);
-}
+
+
+/* cztery warstwy z przesunięciem highlightu */
+// #home .shape-1 {
+  
+//   --speed: 46s; --delay: 0s;
+//   --size: 80vmin; --baseOpacity: .25; --hlDelay: 0s;
+//   z-index:1000;
+// }
+// #home .shape-2 {
+  
+//   --speed: 58s; --delay: -8s;
+//   --size: 70vmin; --baseOpacity: .20; --hlDelay: 2s;
+  
+// }
+// #home .shape-3 {
+  
+//   --speed: 68s; --delay: -14s;
+//   --size: 90vmin; --baseOpacity: .18; --hlDelay: 4s;
+  
+//   mix-blend-mode: lighten;
+// }
+// #home .shape-4 {
+  
+//   --speed: 82s; --delay: -20s;
+//   --size: 95vmin; --baseOpacity: .16; --hlDelay: 6s;
+  
+// }
 
 /* Treść nad tłem */
-#home .hero-content,
-#home .scroll-indicator {
-  position: relative;
-  z-index: 2;
+// #home .hero-content,
+// #home .scroll-indicator {
+//   position: relative;
+//   z-index: 2;
+// }
+
+// /* Dla osób z prefers-reduced-motion */
+// @media (prefers-reduced-motion: reduce) {
+//   #home .shape { animation: none; }
+// }
+
+
+.floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
 }
 
-/* Dla osób z prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  #home .shape { animation: none; }
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.7;
+  animation: float 20s infinite ease-in-out;
 }
 
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  background: #345858;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 400px;
+  height: 400px;
+  background: #c05189;
+  top: 50%;
+  right: 10%;
+  animation-delay: -10s;
+}
+
+.shape-3 {
+  width: 250px;
+  height: 250px;
+  background: #00ffff;
+  bottom: 10%;
+  left: 30%;
+  animation-delay: -20s;
+}
+
+.shape-4 {
+  width: 350px;
+  height: 350px;
+  background: #ff69b4;
+  top: 30%;
+  right: 30%;
+  animation-delay: -40s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(50px, 50px) scale(1.1);
+  }
+  50% {
+    transform: translate(-30px, 80px) scale(0.9);
+  }
+  75% {
+    transform: translate(-60px, -40px) scale(1.05);
+  }
+}
 
 /* Wsparcie dla użytkowników z ograniczonym ruchem */
 @media (prefers-reduced-motion: reduce) {
@@ -784,3 +944,664 @@
   opacity: 1 !important;
   transform: translateY(0) !important;
 }
+
+
+/* 1) Foreground nad treścią */
+.hero-foreground{
+  position: absolute;
+  inset: 0;
+  z-index: 9999;        /* WYŻEJ niż .hero-content */
+  pointer-events: none; /* przyciski nadal klikalne */
+  overflow: hidden;
+}
+
+/* 2) Obraz na wierzchu — ten sam co w shape-1 (podmień url jeśli trzeba) */
+.shape-1-fore{
+  --img: url('../../assets/Copy_of_HHDL-Orzechowski2.jpg'); /* lub pełny URL gdy WP */
+  --size: 85vmin;
+  position: absolute;
+  top: 50%; left: 50%;
+  width: var(--size); height: var(--size);
+  transform: translate(-50%, -50%);
+  background-image: var(--img);
+  background-size: cover;
+  background-position: center;
+  border-radius: 28px;
+  mix-blend-mode: screen;
+  filter: hue-rotate(8deg) saturate(1.1);
+  box-shadow: 0 40px 120px rgba(0,0,0,.25);
+  will-change: transform, opacity, filter;
+
+  /* ważne: przy starcie jest niewidoczny, a animacja go „wyciąga” na 1 */
+  opacity: 0;
+  animation: driftFore 60s ease-in-out infinite;
+}
+
+/* 3) Zabrakło tego bloku – to nasza animacja widoczności + ruchu */
+@keyframes driftFore{
+  0%   { transform: translate(-58%, -54%) scale(1.00) rotate(.4deg); opacity: 0; }
+  25%  { transform: translate(-50%, -46%) scale(1.05) rotate(-.3deg); opacity: 0.6; }
+  /* PRZEBICIE – pełna widoczność nad buttonami */
+  40%  { transform: translate(-46%, -42%) scale(1.07) rotate(-.5deg); opacity: 1; }
+  60%  { transform: translate(-44%, -48%) scale(1.10) rotate(.6deg);  opacity: 1; }
+  /* schodzimy z powrotem */
+  75%  { transform: translate(-47%, -55%) scale(1.06) rotate(.2deg);  opacity: .5; }
+  100% { transform: translate(-60%, -58%) scale(1.00) rotate(.4deg);  opacity: 0; }
+}
+
+/* --- pojedynczy kształt --- */
+#home .shape {
+  animation-name: drift, highlightCycle;
+  animation-duration: var(--speed, 60s), 20s; /* pełny cykl = 20s */
+  animation-timing-function: ease-in-out, linear;
+  animation-iteration-count: infinite, infinite;
+  animation-direction: alternate, normal;
+  animation-delay: var(--delay, 0s), var(--hlDelay, 0s);
+}
+
+/* --- podświetlenie: 5s z 20s cyklu = 25% --- */
+@keyframes highlightCycle {
+  0%       { opacity: 1; }
+  25%      { opacity: 1; }       /* świeci przez 5 sekund */
+  25.001%,100% { opacity: var(--baseOpacity, .22); }
+}
+
+/* --- offsety highlightów: każdy zaczyna co 5s --- */
+#home .shape-1 { --hlDelay: 0s; }
+#home .shape-2 { --hlDelay: 5s; }
+#home .shape-3 { --hlDelay: 10s; }
+#home .shape-4 { --hlDelay: 15s; }
+
+
+/* 1) DWA osobne keyframes: długi (5s z 20s) i krótki (0.75s z 8s) */
+@keyframes highlightLong {
+  0%       { opacity: var(--hi, 1); }
+  25%      { opacity: var(--hi, 1); }     /* 5s z 20s cyklu */
+  25.001%, 100% { opacity: var(--baseOpacity, .22); }
+}
+@keyframes highlightShort {
+  0%       { opacity: var(--hi, .6); }
+  9.375%   { opacity: var(--hi, .6); }    /* 0.75s z 8s cyklu */
+  9.376%, 100% { opacity: var(--baseOpacity, .22); }
+}
+
+/* 2) Domyślnie wszystkie shape’y: drift + KRÓTKI highlight (8s) */
+#home .shape {
+  /* ...Twoje istniejące style (#home .shape) zostają... */
+  opacity: var(--baseOpacity, .22);
+  will-change: transform, opacity, filter;
+
+  /* Uwaga: tu ustawiamy domyślnie KRÓTKI highlight */
+  animation-name: drift, highlightShort;
+  animation-duration: var(--speed, 60s), 8s;
+  animation-timing-function: ease-in-out, linear;
+  animation-iteration-count: infinite, infinite;
+  animation-direction: alternate, normal;
+  animation-delay: var(--delay, 0s), var(--hlDelay, 0s);
+}
+
+/* --- ZBIORCZO DLA WSZYSTKICH KSZTAŁTÓW --- */
+// #home .shape {
+//   /* ...to co miałeś... */
+//   opacity: var(--baseOpacity, .22);
+//   pointer-events: none;         /* nie blokuj kliknięć */
+//   z-index: 1;                   /* domyślnie pod treścią */
+//   animation-name: drift, highlightShort;
+//   animation-duration: var(--speed, 60s), 8s;   /* krótki cykl dla 2–4 */
+//   animation-timing-function: ease-in-out, linear;
+//   animation-iteration-count: infinite, infinite;
+//   animation-direction: alternate, normal;
+//   animation-delay: var(--delay, 0s), var(--hlDelay, 0s);
+// }
+
+/* --- DŁUGI highlight tylko dla .shape-1 (5 s w cyklu 20 s) --- */
+#home .shape-1 {
+  /* Twoje zmienne (img/speed/size) zostają bez zmian */
+  --baseOpacity: .25;
+  --hlDelay: 0s;
+  --hi: 1;                      /* pełne 1.0 w trakcie highlightu */
+  z-index: 3;                   /* NAD treścią (przyciski), ale nie blokuje kliknięć przez pointer-events:none */
+
+  /* nadpisanie drugiej animacji TYLKO tutaj */
+  animation-name: drift, highlightLong;
+  animation-duration: var(--speed, 60s), 20s;  /* pełny cykl 20 s => 5 s ON */
+}
+
+/* --- KRÓTSZE, słabsze mignięcia dla pozostałych, bez 1.0 --- */
+#home .shape-2 { --baseOpacity: .20; --hlDelay: 2s;  --hi: .6; }
+#home .shape-3 { --baseOpacity: .18; --hlDelay: 4s;  --hi: .6; }
+#home .shape-4 { --baseOpacity: .16; --hlDelay: 6s;  --hi: .6; }
+
+/* --- KEYFRAMES --- */
+/* krótkie mignięcie (ok. 0.75 s z 8 s), bez pełnego 1.0 */
+@keyframes highlightShort {
+  0%        { opacity: var(--hi, .6); }
+  9.375%    { opacity: var(--hi, .6); }          /* 0.75 s przy 8 s cyklu */
+  9.376%,100% { opacity: var(--baseOpacity, .22); }
+}
+
+/* długi highlight (5 s z 20 s) wyłącznie dla .shape-1 */
+@keyframes highlightLong {
+  0%        { opacity: var(--hi, 1); }
+  25%       { opacity: var(--hi, 1); }           /* 5 s przy 20 s cyklu */
+  25.001%,100% { opacity: var(--baseOpacity, .25); }
+}
+
+/* === HERO (tło + foto + animowane prostokąty) === */
+#home.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  padding-top: 80px; /* dla navbaru */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ---- 1) PŁYWAJĄCE PROSTOKĄTY (TŁO) ---- */
+.hero-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.floating-shapes {
+  position: absolute;
+  inset: 0;
+}
+.shape {
+  position: absolute;
+  width: 380px; height: 220px;          /* prostokąt */
+  border-radius: 18px;                   /* miękkie rogi */
+  opacity: 0.3;                          /* stała transparencja */
+  filter: none;                          /* bez blur */
+  animation: float-rect 22s ease-in-out infinite;
+  will-change: transform;
+}
+.shape-1 { background: #ffd700; top: 12%; left: 8%;  animation-delay: 0s;    }
+.shape-2 { background: #78c8ff; top: 55%; right: 6%; animation-delay: -5s;   }
+.shape-3 { background: #a2ffce; bottom: 10%; left: 26%; animation-delay: -10s; }
+.shape-4 { background: #ff79b0; top: 28%; right: 28%; animation-delay: -15s; }
+
+@keyframes float-rect {
+  0%, 100% { transform: translate(0, 0) rotate(0.6deg) }
+  25%      { transform: translate(40px, 30px) rotate(-1.2deg) }
+  50%      { transform: translate(-30px, 70px) rotate(0.8deg) }
+  75%      { transform: translate(-50px, -30px) rotate(-0.6deg) }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .shape { animation: none; }
+}
+
+/* ---- 2) CENTRALNE, NIERUCHOME OKNO Z JPG ---- */
+.hero-photo {
+  position: absolute;
+  z-index: 2;                     /* nad prostokątami, pod treścią (zmienisz niżej) */
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(72vmin, 780px);      /* responsywna szerokość */
+  aspect-ratio: 4/5;              /* pionowe okno (zmień jeśli chcesz 16/9) */
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 40px 120px rgba(0,0,0,.35);
+  background: #000;               /* fallback */
+}
+
+/* Wersja IMG (prosta i ostra) */
+.hero-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Alternatywa: jeśli wolisz tło z CSS (odkomentuj w HTML .hero-photo-bg) */
+/*
+.hero-photo-bg {
+  position: absolute; inset: 0;
+  background: url('assets/michal.png') center/cover no-repeat;
+}
+*/
+
+/* ---- 3) TREŚĆ NAD WSZYSTKIM ---- */
+.hero-content,
+.scroll-indicator {
+  position: relative;
+  z-index: 3;                      /* tekst i przyciski nad zdjęciem */
+}
+
+/* === HERO: stała ramka za treścią + pływające, kolorowe płaty === */
+#home.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  padding-top: 80px; /* navbar */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* --- pływające płaty w tle --- */
+.hero-background { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.floating-shapes { position: absolute; inset: 0; }
+
+.shape {
+  position: absolute;
+  opacity: 0.3;                 /* stała przezroczystość płatów */
+  border-radius: 36px;          /* miękkie rogi — „płaty lodu” */
+  will-change: transform;
+  animation: float-plates 26s ease-in-out infinite;
+}
+
+.shape-1 { width: 520px; height: 300px; background:#ffd769;    top:12%; left:8%;   transform: rotate(8deg);   animation-delay: 0s; }
+.shape-2 { width: 680px; height: 360px; background:#7ec8ff;    top:54%; right:6%;  transform: rotate(-6deg);  animation-delay: -6s; }
+.shape-3 { width: 460px; height: 320px; background:#a6ffd8;    bottom:10%; left:24%; transform: rotate(12deg); animation-delay: -12s; }
+.shape-4 { width: 740px; height: 420px; background:#ff86bc;    top:28%; right:26%; transform: rotate(-10deg); animation-delay: -18s; }
+
+@keyframes float-plates {
+  0%,100% { transform: translate(0,0) rotate(var(--r, 0deg)); }
+  25%     { transform: translate(42px,28px) rotate(calc(var(--r, 0deg) - 1.5deg)); }
+  50%     { transform: translate(-34px,72px) rotate(calc(var(--r, 0deg) + 1.2deg)); }
+  75%     { transform: translate(-50px,-30px) rotate(calc(var(--r, 0deg) - 0.8deg)); }
+}
+/* opcjonalnie: zdefiniuj bazowy kąt jako zmienną (tu użyłem inline przy każdej shape) */
+
+@media (prefers-reduced-motion: reduce) {
+  .shape { animation: none; }
+}
+
+/* --- centralny, NIERUCHOMY shape otaczający tytuł i przyciski --- */
+/* używamy pseudo-elementu, żeby ramka dopasowała się do treści automatycznie */
+.hero-content-frame {
+  position: relative;
+  z-index: 3;                    /* nad płatami */
+  display: grid;
+  place-items: center;
+  text-align: center;
+  width: min(70vw, 70vh);
+  padding: clamp(1.5rem, 3vw, 3rem) clamp(1.25rem, 3vw, 2.5rem);
+  margin-inline: auto;
+}
+
+.hero-content-frame::before {
+  content: "";
+  position: absolute;
+  inset: -18px -22px;            /* margines wokół treści */
+  border-radius: 28px;           /* kształt centralny */
+  background: #0e1130;          /* SOLID — brak transparentności */
+  /* jeśli wolisz delikatne szkło: background: rgba(14,17,48,0.92); */
+  box-shadow: 0 30px 120px rgba(0,0,0,0.35);
+  z-index: -1;                   /* za tekstem, nad tłem */
+  pointer-events: none;          /* nie blokuje kliknięć */
+}
+
+/* (opcjonalnie) ozdobna obwódka: */
+/*
+.hero-content-frame::after {
+  content:"";
+  position:absolute; inset:-22px -26px;
+  border-radius:34px;
+  border:1px solid rgba(255,255,255,0.25);
+  z-index:-1; pointer-events:none;
+}
+*/
+
+/* Treść w hero nadal biała i na wierzchu */
+.hero-content { color: #fff; }
+
+.hero-content-frame::before {
+  background: rgba(55, 52, 224, 0.9);
+  color: #111; /* wtedy zmień kolor tekstu w .hero-content na ciemny */
+}
+.hero-content { color: #111; }
+
+/* === HERO: centralny, nieruchomy blok + płyty lodu NA WIERZCHU === */
+#home.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  padding-top: 80px; /* navbar */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 1) Nieruchomy, centralny „kafelek” za treścią */
+.hero-content.hero-content-frame {
+  position: relative;
+  z-index: 2; /* pod płytami, nad tłem */
+  display: grid;
+  place-items: center;
+  text-align: center;
+  width: min(92vw, 980px);
+  padding: clamp(1.5rem, 3vw, 3rem) clamp(1.25rem, 3vw, 2.5rem);
+  margin-inline: auto;
+  color: #fff;
+}
+.hero-content.hero-content-frame::before {
+  content: "";
+  position: absolute;
+  inset: -18px -22px;
+  border-radius: 28px;
+  background: #0e1130;           /* pełne, nieprzezroczyste tło */
+  box-shadow: 0 30px 120px rgba(0,0,0,.35);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* 2) Pływające „płaty lodu” – NA WIERZCHU WSZYSTKIEGO */
+.hero-background { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.floating-shapes {
+  position: absolute;
+  inset: 0;
+  z-index: 9_999;          /* nad treścią, nad kafelkiem */
+  pointer-events: none;    /* NIE blokuje kliknięć */
+}
+
+/* płaty lodu: duże, zaokrąglone prostokąty, półprzezroczyste, z blendem */
+.shape {
+  position: absolute;
+  width: 40vw;                 /* responsywne rozmiary */
+  max-width: 740px;
+  min-width: 420px;
+  height: 26vw;
+  max-height: 420px;
+  min-height: 280px;
+  border-radius: 36px;
+  opacity: 0.3;                /* stała przezroczystość */
+  mix-blend-mode: screen;      /* „prześwituje” nad wszystkim */
+  will-change: transform;
+  animation: float-plates 26s ease-in-out infinite;
+}
+
+/* pozycje/kolory (przykładowe) */
+.shape-1 { background:#706d66; top:10%; left:6%;    --r:  8deg;  animation-delay: 0s; }
+.shape-2 { background:#7ec8ff; top:52%; right:4%;   --r: -6deg;  animation-delay: -6s; }
+.shape-3 { background:#717e78; bottom:8%; left:22%; --r: 12deg;  animation-delay: -12s; }
+.shape-4 { background:#50484c; top:26%; right:22%;  --r: -10deg; animation-delay: -18s; }
+
+/* animacja „dryfu” */
+@keyframes float-plates {
+  0%, 100% { transform: translate(0, 0) rotate(var(--r, 0deg)); }
+  25%      { transform: translate(42px, 28px) rotate(calc(var(--r, 0deg) - 1.5deg)); }
+  50%      { transform: translate(-34px, 72px) rotate(calc(var(--r, 0deg) + 1.2deg)); }
+  75%      { transform: translate(-50px, -30px) rotate(calc(var(--r, 0deg) - 0.8deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shape { animation: none; }
+}
+
+/* 3) Scroll indicator i reszta treści – pod płytami */
+.scroll-indicator { position: relative; z-index: 2; }
+
+/* (opcjonalnie) delikatny cień na tekście, by był czytelny przez blend */
+.hero-title, .hero-subtitle, .hero-cta {
+  text-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+
+/* === OVERLAY LODU NA WIERZCHU WSZYSTKIEGO W #home === */
+#home {
+  position: relative; /* kotwica dla absolute */
+}
+
+#home .ice-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 999999;     /* nad hero-content i całą treścią sekcji */
+  pointer-events: none;/* przyciski pod spodem zostają klikalne */
+  overflow: hidden;
+}
+
+/* Duże, zaokrąglone płaty – nowa klasa .ice (żeby nie kolidować z .shape) */
+#home .ice-overlay .ice {
+  position: absolute;
+  border-radius: 36px;
+  opacity: 0.3;                 /* stała przezroczystość */
+  mix-blend-mode: screen;       /* „prześwituje” nad wszystkim */
+  will-change: transform;
+  animation: ice-float 26s ease-in-out infinite;
+}
+
+/* Rozmiary/położenia (przykładowe, dopasuj do gustu) */
+#home .ice-overlay .ice-1 { width: 52vw; max-width: 780px; height: 30vw; max-height: 420px; top: 10%; left: 6%;  background: #ffd769; transform: rotate(8deg);   animation-delay: 0s;  }
+#home .ice-overlay .ice-2 { width: 60vw; max-width: 920px; height: 34vw; max-height: 480px; top: 52%; right: 4%; background: #7ec8ff; transform: rotate(-6deg);  animation-delay: -6s; }
+#home .ice-overlay .ice-3 { width: 46vw; max-width: 700px; height: 28vw; max-height: 420px; bottom: 8%; left: 22%; background: #a6ffd8; transform: rotate(12deg); animation-delay: -12s;}
+#home .ice-overlay .ice-4 { width: 64vw; max-width: 980px; height: 36vw; max-height: 520px; top: 26%; right: 20%; background: #ff86bc; transform: rotate(-10deg); animation-delay: -18s;}
+
+@keyframes ice-float {
+  0%, 100% { transform: translate(0, 0) rotate(var(--r, 0deg)); }
+  25%      { transform: translate(42px, 28px) rotate(calc(var(--r, 0deg) - 1.5deg)); }
+  50%      { transform: translate(-34px, 72px) rotate(calc(var(--r, 0deg) + 1.2deg)); }
+  75%      { transform: translate(-50px, -30px) rotate(calc(var(--r, 0deg) - 0.8deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #home .ice-overlay .ice { animation: none; }
+}
+
+
+/* === OVERLAY LODU (na wierzchu) — różne kierunki rotacji === */
+#home .ice-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 999999;      /* nad wszystkim */
+  pointer-events: none; /* nie blokuje kliknięć */
+  overflow: hidden;
+}
+
+#home .ice-overlay .ice {
+  position: absolute;
+  border-radius: 36px;
+  opacity: 0.1;
+  mix-blend-mode: screen;
+  will-change: transform;
+  /* każdy „lód” może mieć inną prędkość i kierunek */
+  animation-name: ice-float-rotate;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* Kierunek rotacji sterujemy zmienną --dir: 1 (CW) lub -1 (CCW)
+   Bazowy kąt ustawiamy w --r (np. 8deg / -6deg) */
+#home .ice-overlay .ice-1 {
+  width: 52vw; max-width: 780px; height: 30vw; max-height: 420px;
+  top: 10%; left: 6%;
+  --r: 8deg;    --dir: 1;      /* zgodnie z ruchem wskazówek */
+  animation-duration: 26s;
+}
+#home .ice-overlay .ice-2 {
+  width: 60vw; max-width: 920px; height: 34vw; max-height: 480px;
+  top: 52%; right: 4%;
+  --r: -6deg;   --dir: -1;     /* przeciwnie do ruchu wskazówek */
+  animation-duration: 32s;
+}
+#home .ice-overlay .ice-3 {
+  width: 46vw; max-width: 700px; height: 28vw; max-height: 420px;
+  bottom: 8%; left: 22%;
+  --r: 12deg;   --dir: 1;
+  animation-duration: 28s;
+}
+#home .ice-overlay .ice-4 {
+  width: 64vw; max-width: 980px; height: 36vw; max-height: 520px;
+  top: 26%; right: 20%;
+  --r: -10deg;  --dir: -1;
+  animation-duration: 34s;
+}
+
+/* Jeden keyframes, kierunek wyliczamy z --dir */
+@keyframes ice-float-rotate {
+  0%   { transform: translate(0, 0) rotate(var(--r, 0deg)); }
+  25%  { transform: translate(42px, 28px) rotate(calc(var(--r, 0deg) + (var(--dir, 1) * 1.6deg))); }
+  50%  { transform: translate(-34px, 72px) rotate(calc(var(--r, 0deg) + (var(--dir, 1) * -1.2deg))); }
+  75%  { transform: translate(-50px, -30px) rotate(calc(var(--r, 0deg) + (var(--dir, 1) * 0.9deg))); }
+  100% { transform: translate(0, 0) rotate(var(--r, 0deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #home .ice-overlay .ice { animation: none; }
+}
+
+/* Widoczność desktop/mobile */
+.desktop-only { display: flex; }
+.mobile-only  { display: none; }
+
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only  { display: inline-flex; }
+}
+
+/* Hamburger */
+.menu-toggle {
+  width: 42px;
+  height: 42px;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+}
+.menu-toggle .bar {
+  width: 20px; height: 2px;
+  background: #1a1a1a;
+  display: block;
+}
+.menu-toggle .bar + .bar { margin-top: 4px; }
+
+/* Overlay przy otwartym menu */
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 1200;
+  animation: overlayIn .2s ease-out;
+}
+@keyframes overlayIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+
+/* Panel mobilny (slide-in) */
+.mobile-menu {
+  position: fixed;
+  top: 0; right: 0;
+  width: min(86vw, 360px);
+  height: 100dvh;
+  background: #ffffff;
+  box-shadow: -20px 0 60px rgba(0,0,0,.18);
+  transform: translateX(100%);
+  transition: transform .25s ease;
+  z-index: 1300;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 4vw, 24px);
+}
+.mobile-menu.open { transform: translateX(0); }
+
+.mobile-links {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.mobile-links a {
+  display: block;
+  padding: 14px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #1a1a1a;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  background: #f7f8fa;
+  border: 1px solid rgba(0,0,0,.06);
+  transition: background .2s ease, transform .2s ease;
+}
+.mobile-links a:hover {
+  background: #eef4ff;
+  transform: translateX(4px);
+}
+.mobile-links a.active {
+  background: #e6f0ff;
+  border-color: #cfe1ff;
+  color: #0b66d0;
+}
+
+/* Drobne korekty nav na mobile */
+@media (max-width: 768px) {
+  .navbar { padding: 1rem 0; }
+  .nav-content { padding: 0 1rem; }
+}
+
+/* Przyciski desktop/mobile jak wcześniej */
+.desktop-only { display: flex; }
+.mobile-only  { display: none; }
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only  { display: inline-flex; }
+}
+
+/* Elegancki przycisk z ikoną */
+.menu-toggle {
+  width: 44px;
+  height: 44px;
+  border: none;
+  opacity:20%;
+  background: rgba(255,255,255,0.9);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  transition: transform .15s ease, box-shadow .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-toggle:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(0,0,0,.14); }
+.menu-toggle:active { transform: translateY(0); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+
+/* Ikona */
+.menu-icon {
+  width: 26px;
+  height: 26px;
+  overflow: visible;
+}
+
+.menu-icon .line {
+  fill: none;
+  stroke: #1a1a1a;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: transform .25s ease, opacity .2s ease, stroke .2s ease;
+  transform-origin: 12px 12px; /* środek ikonki */
+}
+
+/* Stan zamknięty – 3 równe kreski (domyślnie) */
+/* Delikatne rozstawienie kreskami zrobimy transformami */
+.menu-icon .top    { transform: translateY(0px); }
+.menu-icon .middle { transform: translateY(0px); }
+.menu-icon .bottom { transform: translateY(0px); }
+
+/* Po otwarciu – morph do „X” */
+.menu-toggle.open .menu-icon .top {
+  transform: translateY(5px) rotate(45deg);
+}
+.menu-toggle.open .menu-icon .middle {
+  opacity: 0;
+}
+.menu-toggle.open .menu-icon .bottom {
+  transform: translateY(-5px) rotate(-45deg);
+}
+
+/* Tryb ciemniejszego tła (jeśli navbar się przyciemnia) */
+.navbar.scrolled .menu-toggle {
+  background: rgba(255,255,255,0.95);
+}
+
+/* Drobny efekt „aktywny” linków również w panelu mobilnym (opcjonalnie) */
+.mobile-links a:active { transform: translateX(2px) scale(0.995); }

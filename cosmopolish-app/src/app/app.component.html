@@ -1,15 +1,52 @@
 <nav class="navbar" [class.scrolled]="isScrolled">
   <div class="nav-content">
     <div class="logo">Cosmopolish</div>
-    <ul class="nav-links">
-      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">Home</a></li>
-      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">About</a></li>
-      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">Work</a></li>
+
+    <!-- Desktop links (ukryte na mobile) -->
+    <ul class="nav-links desktop-only">
+      <li><a (click)="scrollToSection('home')"   [class.active]="activeSection === 'home'">Home</a></li>
+      <li><a (click)="scrollToSection('about')"  [class.active]="activeSection === 'about'">About</a></li>
+      <li><a (click)="scrollToSection('work')"   [class.active]="activeSection === 'work'">Work</a></li>
+      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">Awards</a></li>
+      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">Contact</a></li>
+    </ul>
+
+    <!-- Hamburger (pokazywany tylko na mobile) -->
+    <button
+      class="menu-toggle mobile-only"
+      type="button"
+      (click)="toggleMenu()"
+      [class.open]="isMenuOpen"
+      [attr.aria-expanded]="isMenuOpen"
+      [attr.aria-label]="isMenuOpen ? 'Close menu' : 'Open menu'">
+      <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="line top"    d="M4 7H20"></path>
+        <path class="line middle" d="M4 12H20"></path>
+        <path class="line bottom" d="M4 17H20"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Overlay + mobilne menu -->
+  <div class="mobile-menu-overlay" *ngIf="isMenuOpen" (click)="closeMenu()" aria-hidden="true"></div>
+
+  <div
+    id="mobile-menu"
+    class="mobile-menu"
+    [class.open]="isMenuOpen"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Main menu">
+    <ul class="mobile-links" (click)="closeMenu()">
+      <li><a (click)="scrollToSection('home')"   [class.active]="activeSection === 'home'">Home</a></li>
+      <li><a (click)="scrollToSection('about')"  [class.active]="activeSection === 'about'">About</a></li>
+      <li><a (click)="scrollToSection('work')"   [class.active]="activeSection === 'work'">Work</a></li>
       <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">Awards</a></li>
       <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">Contact</a></li>
     </ul>
   </div>
 </nav>
+
 
 <section id="home" class="hero">
   <div class="hero-background">
@@ -20,7 +57,11 @@
       <div class="shape shape-4"></div>
     </div>
   </div>
-  <div class="hero-content">
+  
+  <!-- <div class="hero-foreground" aria-hidden="true">
+    <div class="shape shape-1-fore"></div>
+  </div> -->
+  <div class="hero-content hero-content-frame">
     <h1 class="hero-title">
       <span class="floating-text">Michał</span>
       <span class="floating-text delay-1">Orzechowski</span>
@@ -34,6 +75,12 @@
   <div class="scroll-indicator">
     <div class="mouse"></div>
   </div>
+  <div class="ice-overlay" aria-hidden="true">
+  <div class="ice ice-1"></div>
+  <div class="ice ice-2"></div>
+  <div class="ice ice-3"></div>
+  <div class="ice ice-4"></div>
+</div>
 </section>
 
 <section id="about" class="about">
@@ -59,37 +106,37 @@
     <h2 class="section-title slide-up">Professional Work</h2>
 
     <div class="work-grid">
-      <div class="card">
+      <div class="card padding">
         <div class="card-icon">📰</div>
         <h3>Journalism</h3>
         <p>Published in various prestigious magazines and media outlets, covering critical social and political issues.</p>
       </div>
 
-      <div class="card">
+      <div class="card padding">
         <div class="card-icon">🎬</div>
         <h3>Film & Documentary</h3>
         <p>Script writer for "Wings of Freedom 1920" and director of "Casus Belli – who needs this war?"</p>
       </div>
 
-      <div class="card">
+      <div class="card padding">
         <div class="card-icon">📚</div>
         <h3>Books</h3>
         <p>"I" (2004) and "Free Tibet free China" (2008) - exploring themes of freedom and human rights.</p>
       </div>
 
-      <div class="card">
+      <div class="card padding">
         <div class="card-icon">🌍</div>
         <h3>Human Rights</h3>
         <p>Authored comprehensive reports and worked with EU Parliament on international human rights issues.</p>
       </div>
 
-      <div class="card">
+      <div class="card padding">
         <div class="card-icon">🕊️</div>
         <h3>Tibet Advocacy</h3>
         <p>Initiated Polish Parliamentary Caucus for Tibet, advancing awareness and support for Tibetan freedom.</p>
       </div>
 
-      <div class="card">
+      <div class="card padding">
         <div class="card-icon">✍️</div>
         <h3>Bilingual Publications</h3>
         <p>Contributing to both Polish and English media, bridging cultural and linguistic boundaries.</p>
