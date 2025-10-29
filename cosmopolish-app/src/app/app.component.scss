@@ -1492,6 +1492,10 @@
   top: 0; right: 0;
   width: min(86vw, 360px);
   height: 100dvh;
+  background: rgba(255, 255, 255);   /* <= 0.4 „przezroczystości” */
+  opacity:0.7;
+  backdrop-filter: blur(12px);            /* szkło dla czytelności */
+  -webkit-backdrop-filter: blur(12px);
   background: #ffffff;
   box-shadow: -20px 0 60px rgba(0,0,0,.18);
   transform: translateX(100%);
