@@ -1,24 +1,28 @@
-name: Deploy Angular to S3 + CloudFront
+name: CI/CD Angular via SSH
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["dev_server"]
     paths:
-      - "cosmopolish-app/**"   # odpalaj tylko gdy zmienisz coś w appce
-  workflow_dispatch: {}
+      - "cosmopolish-app/**"
+      - ".github/workflows/deploy.yml"
+  pull_request:
+    branches: ["dev_server"]
+    paths:
+      - "cosmopolish-app/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
 
 concurrency:
   group: deploy-prod
   cancel-in-progress: true
 
 env:
-  AWS_REGION: eu-central-1
-  S3_BUCKET: deploy-mm-cosmopolish-app
-  CLOUDFRONT_DISTRIBUTION_ID: E3PN9DVUR5C3JB
-  BUILD_DIR: cosmopolish-app/dist/cosmopolish-app/browser   # <— UWAGA: z prefiksem folderu
+  APP_DIR: cosmopolish-app
+  BUILD_DIR: cosmopolish-app/dist/cosmopolish-app/browser
 
 jobs:
-  deploy:
+  ci:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,39 +35,71 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: cosmopolish-app/package-lock.json
 
       - name: Install deps
-        working-directory: cosmopolish-app
+        working-directory: ${{ env.APP_DIR }}
         run: npm ci
 
       - name: Build Angular (prod)
-        working-directory: cosmopolish-app
-        run: npx ng build --configuration production
+        working-directory: ${{ env.APP_DIR }}
+        run: npm run build -- --configuration production
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          name: angular-dist
+          path: ${{ env.BUILD_DIR }}
+          if-no-files-found: error
 
-      - name: Sync assets (long cache)
-        run: |
-          aws s3 sync "$BUILD_DIR" "s3://${{ env.S3_BUCKET }}" \
-            --delete \
-            --exclude "index.html" \
-            --cache-control "public,max-age=31536000,immutable"
+  deploy:
+    needs: ci
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
-      - name: Upload index.html (no cache)
-        run: |
-          aws s3 cp "$BUILD_DIR/index.html" "s3://${{ env.S3_BUCKET }}/index.html" \
-            --cache-control "no-cache, no-store, must-revalidate" \
-            --content-type "text/html"
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: angular-dist
+          path: dist-upload
 
-      - name: Invalidate CloudFront (index + root)
+      - name: Prepare deploy archive
         run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/index.html" "/"
+          tar -czf web-dist.tgz -C dist-upload .
+
+      - name: Upload archive to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: web-dist.tgz
+          target: /tmp
+
+      - name: Extract and publish on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            TARGET_DIR="${{ secrets.SSH_TARGET_DIR }}"
+            RELEASE_DIR="${TARGET_DIR}.release"
+
+            mkdir -p "$TARGET_DIR"
+            rm -rf "$RELEASE_DIR"
+            mkdir -p "$RELEASE_DIR"
+
+            tar -xzf /tmp/web-dist.tgz -C "$RELEASE_DIR"
+            rm -f /tmp/web-dist.tgz
+
+            find "$TARGET_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            cp -a "$RELEASE_DIR"/. "$TARGET_DIR"/
+            rm -rf "$RELEASE_DIR"
