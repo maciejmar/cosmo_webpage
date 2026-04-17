@@ -92,7 +92,7 @@ jobs:
           script: |
             set -e
             TARGET_DIR="${{ secrets.SSH_TARGET_DIR }}"
-            RELEASE_DIR="${TARGET_DIR}.release"
+            RELEASE_DIR="/tmp/cosmopolish-release-$(date +%s)"
 
             mkdir -p "$TARGET_DIR"
             rm -rf "$RELEASE_DIR"
