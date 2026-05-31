@@ -51,6 +51,7 @@ interface UiText {
   image: string;
   imageUpload: string;
   imageRemove: string;
+  imageSelected: string;
   videoLink: string;
   openVideo: string;
 }
@@ -100,6 +101,7 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     image: 'Image',
     imageUpload: 'Upload image',
     imageRemove: 'Remove image',
+    imageSelected: 'Image selected',
     videoLink: 'Video link',
     openVideo: 'Open video'
   },
@@ -147,6 +149,7 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     image: 'Zdjęcie',
     imageUpload: 'Dodaj zdjęcie',
     imageRemove: 'Usuń zdjęcie',
+    imageSelected: 'Zdjęcie wybrane',
     videoLink: 'Link do wideo',
     openVideo: 'Otwórz wideo'
   }

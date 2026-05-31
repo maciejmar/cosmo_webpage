@@ -1136,6 +1136,50 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+.media-editor {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed rgba(0, 102, 204, 0.35);
+  border-radius: 16px;
+  background: rgba(0, 102, 204, 0.04);
+}
+
+.media-editor__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.media-editor__status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #0066cc;
+  font-weight: 600;
+}
+
+.file-upload {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border-radius: 999px;
+  background: #0066cc;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.file-upload input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 label {
   display: grid;
   gap: 0.45rem;

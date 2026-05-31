@@ -165,10 +165,14 @@
             <span>{{ ui().icon }}</span>
             <input [name]="'workIcon' + index" type="text" [(ngModel)]="item.icon" />
           </label>
-          <label>
-            <span>{{ ui().image }}</span>
-            <input [name]="'workImage' + index" type="file" accept="image/*" (change)="onWorkImageSelected($event, index)" />
-          </label>
+          <div class="media-editor">
+            <span class="media-editor__title">{{ ui().image }}</span>
+            <label class="file-upload">
+              <span>{{ ui().imageUpload }}</span>
+              <input [name]="'workImage' + index" type="file" accept="image/*" (change)="onWorkImageSelected($event, index)" />
+            </label>
+            <p class="media-editor__status" *ngIf="item.imageUrl">{{ ui().imageSelected }}</p>
+          </div>
           <div class="editor-media-preview" *ngIf="item.imageUrl">
             <img [src]="item.imageUrl" [alt]="item.title || ui().image" />
             <button class="remove-button" type="button" (click)="removeWorkImage(index)">{{ ui().imageRemove }}</button>
