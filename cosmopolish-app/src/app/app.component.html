@@ -83,24 +83,18 @@
     <form class="login-form" (ngSubmit)="login()">
       <label>
         <span>Login</span>
-        <input type="text" name="username" [(ngModel)]="loginForm.username" placeholder="adim" />
+        <input type="text" name="username" [(ngModel)]="loginForm.username" />
       </label>
 
       <label>
         <span>{{ ui().password }}</span>
-        <input type="password" name="password" [(ngModel)]="loginForm.password" placeholder="pass" />
+        <input type="password" name="password" [(ngModel)]="loginForm.password" />
       </label>
 
       <p class="error-message" *ngIf="loginError">{{ loginError }}</p>
 
       <button class="panel-submit" type="submit">{{ ui().adminLogin }}</button>
     </form>
-
-    <div class="credentials-hint">
-      <p>{{ ui().testCredentials }}</p>
-      <p><strong>Login:</strong> {{ adminCredentials.username }}</p>
-      <p><strong>{{ ui().password }}:</strong> {{ adminCredentials.password }}</p>
-    </div>
   </ng-container>
 
   <ng-template #adminEditor>

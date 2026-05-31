@@ -164,7 +164,6 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly localizedContent = this.contentService.content;
   readonly content = computed(() => this.localizedContent()[this.activeLanguage()]);
   readonly isLoggedIn = this.authService.isLoggedIn;
-  readonly adminCredentials = this.authService.getCredentialsHint();
   readonly workPreviewCount = computed(() => this.content().work.items.length);
   readonly awardPreviewCount = computed(() => this.content().awards.items.length);
   readonly ui = computed(() => UI_TEXT[this.activeLanguage()]);
