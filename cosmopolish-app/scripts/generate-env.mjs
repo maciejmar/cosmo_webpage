@@ -12,7 +12,9 @@ const targetPath = resolve(projectRoot, 'src/environments/environment.ts');
 
 const defaults = {
   ADMIN_USERNAME: '',
-  ADMIN_PASSWORD: ''
+  ADMIN_PASSWORD: '',
+  ADMIN_USERNAME_2: '',
+  ADMIN_PASSWORD_2: ''
 };
 
 function parseEnv(content) {
@@ -42,7 +44,9 @@ const resolvedEnvPath = envCandidates.find((candidate) => existsSync(candidate))
 const parsed = resolvedEnvPath ? parseEnv(readFileSync(resolvedEnvPath, 'utf8')) : {};
 const config = {
   ADMIN_USERNAME: parsed.ADMIN_USERNAME ?? defaults.ADMIN_USERNAME,
-  ADMIN_PASSWORD: parsed.ADMIN_PASSWORD ?? defaults.ADMIN_PASSWORD
+  ADMIN_PASSWORD: parsed.ADMIN_PASSWORD ?? defaults.ADMIN_PASSWORD,
+  ADMIN_USERNAME_2: parsed.ADMIN_USERNAME_2 ?? defaults.ADMIN_USERNAME_2,
+  ADMIN_PASSWORD_2: parsed.ADMIN_PASSWORD_2 ?? defaults.ADMIN_PASSWORD_2
 };
 
 if (!resolvedEnvPath) {
@@ -54,7 +58,9 @@ mkdirSync(dirname(targetPath), { recursive: true });
 const fileContent = `export const environment = {
   production: true,
   adminUsername: ${JSON.stringify(config.ADMIN_USERNAME)},
-  adminPassword: ${JSON.stringify(config.ADMIN_PASSWORD)}
+  adminPassword: ${JSON.stringify(config.ADMIN_PASSWORD)},
+  adminUsername2: ${JSON.stringify(config.ADMIN_USERNAME_2)},
+  adminPassword2: ${JSON.stringify(config.ADMIN_PASSWORD_2)}
 };
 `;
 

@@ -9,16 +9,21 @@ export class AuthService {
 
   login(username: string, password: string): boolean {
     const normalizedUsername = username.trim().toLowerCase();
-    const configuredUsername = environment.adminUsername.trim().toLowerCase();
-    const acceptedUsernames = new Set(
-      [configuredUsername, 'cosmo-admin', 'cosmo-adim'].filter((value) => value.length > 0)
-    );
+    const credentials = [
+      {
+        username: environment.adminUsername.trim().toLowerCase(),
+        password: environment.adminPassword
+      },
+      {
+        username: environment.adminUsername2.trim().toLowerCase(),
+        password: environment.adminPassword2
+      }
+    ].filter((credential) => credential.username.length > 0 && credential.password.length > 0);
 
-    const authenticated =
-      acceptedUsernames.has(normalizedUsername) &&
-      password === environment.adminPassword &&
-      acceptedUsernames.size > 0 &&
-      environment.adminPassword.length > 0;
+    const authenticated = credentials.some(
+      (credential) =>
+        credential.username === normalizedUsername && credential.password === password
+    );
 
     if (authenticated) {
       localStorage.setItem(SESSION_STORAGE_KEY, 'true');

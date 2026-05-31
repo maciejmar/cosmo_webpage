@@ -48,6 +48,8 @@ jobs:
         env:
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_USERNAME_2: ${{ secrets.ADMIN_USERNAME_2 }}
+          ADMIN_PASSWORD_2: ${{ secrets.ADMIN_PASSWORD_2 }}
         run: |
           if [ -z "$ADMIN_USERNAME" ] || [ -z "$ADMIN_PASSWORD" ]; then
             echo "Missing ADMIN_USERNAME or ADMIN_PASSWORD secret"
@@ -57,6 +59,10 @@ jobs:
           {
             printf 'ADMIN_USERNAME=%s\n' "$ADMIN_USERNAME"
             printf 'ADMIN_PASSWORD=%s\n' "$ADMIN_PASSWORD"
+            if [ -n "$ADMIN_USERNAME_2" ] && [ -n "$ADMIN_PASSWORD_2" ]; then
+              printf 'ADMIN_USERNAME_2=%s\n' "$ADMIN_USERNAME_2"
+              printf 'ADMIN_PASSWORD_2=%s\n' "$ADMIN_PASSWORD_2"
+            fi
           } > .env
 
       - name: Build Angular (prod)
