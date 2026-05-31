@@ -83,12 +83,12 @@
     <form class="login-form" (ngSubmit)="login()">
       <label>
         <span>Login</span>
-        <input type="text" name="username" [(ngModel)]="loginForm.username" placeholder="cosmo-adim" />
+        <input type="text" name="username" [(ngModel)]="loginForm.username" placeholder="adim" />
       </label>
 
       <label>
         <span>{{ ui().password }}</span>
-        <input type="password" name="password" [(ngModel)]="loginForm.password" placeholder="1@aA2#$bB-c1o2s3m4o5" />
+        <input type="password" name="password" [(ngModel)]="loginForm.password" placeholder="pass" />
       </label>
 
       <p class="error-message" *ngIf="loginError">{{ loginError }}</p>
