@@ -48,6 +48,11 @@ interface UiText {
   email: string;
   twitterLabel: string;
   twitterUrl: string;
+  image: string;
+  imageUpload: string;
+  imageRemove: string;
+  videoLink: string;
+  openVideo: string;
 }
 
 const UI_TEXT: Record<LanguageCode, UiText> = {
@@ -91,7 +96,12 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     hero: 'Hero',
     email: 'Email',
     twitterLabel: 'X / Twitter label',
-    twitterUrl: 'X / Twitter URL'
+    twitterUrl: 'X / Twitter URL',
+    image: 'Image',
+    imageUpload: 'Upload image',
+    imageRemove: 'Remove image',
+    videoLink: 'Video link',
+    openVideo: 'Open video'
   },
   pl: {
     home: 'Start',
@@ -133,7 +143,12 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     hero: 'Hero',
     email: 'Email',
     twitterLabel: 'Etykieta X / Twitter',
-    twitterUrl: 'Link X / Twitter'
+    twitterUrl: 'Link X / Twitter',
+    image: 'Zdjęcie',
+    imageUpload: 'Dodaj zdjęcie',
+    imageRemove: 'Usuń zdjęcie',
+    videoLink: 'Link do wideo',
+    openVideo: 'Otwórz wideo'
   }
 };
 
@@ -321,6 +336,27 @@ export class AppComponent implements OnInit, OnDestroy {
     this.editableContent.work.items.splice(index, 1);
   }
 
+  onWorkImageSelected(event: Event, index: number) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      this.editableContent.work.items[index].imageUrl = result;
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  removeWorkImage(index: number) {
+    this.editableContent.work.items[index].imageUrl = '';
+  }
+
   addAwardItem() {
     this.editableContent.awards.items.push(this.createAwardItem());
   }
@@ -364,7 +400,9 @@ export class AppComponent implements OnInit, OnDestroy {
     return {
       title: 'New material',
       description: 'Add a new description for this section.',
-      icon: '📰'
+      icon: '📰',
+      imageUrl: '',
+      videoUrl: ''
     };
   }
 

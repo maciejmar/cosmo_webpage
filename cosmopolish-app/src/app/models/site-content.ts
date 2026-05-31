@@ -4,6 +4,8 @@ export interface ContentBlock {
   title: string;
   description: string;
   icon?: string;
+  imageUrl?: string;
+  videoUrl?: string;
 }
 
 export interface AwardItem {

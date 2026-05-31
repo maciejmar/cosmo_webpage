@@ -166,6 +166,18 @@
             <input [name]="'workIcon' + index" type="text" [(ngModel)]="item.icon" />
           </label>
           <label>
+            <span>{{ ui().image }}</span>
+            <input [name]="'workImage' + index" type="file" accept="image/*" (change)="onWorkImageSelected($event, index)" />
+          </label>
+          <div class="editor-media-preview" *ngIf="item.imageUrl">
+            <img [src]="item.imageUrl" [alt]="item.title || ui().image" />
+            <button class="remove-button" type="button" (click)="removeWorkImage(index)">{{ ui().imageRemove }}</button>
+          </div>
+          <label>
+            <span>{{ ui().videoLink }}</span>
+            <input [name]="'workVideo' + index" type="url" [(ngModel)]="item.videoUrl" />
+          </label>
+          <label>
             <span>{{ ui().materialTitle }}</span>
             <input [name]="'workTitle' + index" type="text" [(ngModel)]="item.title" />
           </label>
@@ -296,8 +308,10 @@
     <div class="work-grid">
       <div class="card padding" *ngFor="let item of content().work.items">
         <div class="card-icon">{{ item.icon || '📰' }}</div>
+        <img class="card-image" *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" />
         <h3>{{ item.title }}</h3>
         <p>{{ item.description }}</p>
+        <a class="video-link" *ngIf="item.videoUrl" [href]="item.videoUrl" target="_blank" rel="noopener">{{ ui().openVideo }}</a>
       </div>
     </div>
   </div>
