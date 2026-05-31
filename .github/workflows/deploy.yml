@@ -45,11 +45,19 @@ jobs:
 
       - name: Create .env
         working-directory: ${{ env.APP_DIR }}
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          cat <<EOF > .env
-          ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
-          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-          EOF
+          if [ -z "$ADMIN_USERNAME" ] || [ -z "$ADMIN_PASSWORD" ]; then
+            echo "Missing ADMIN_USERNAME or ADMIN_PASSWORD secret"
+            exit 1
+          fi
+
+          {
+            printf 'ADMIN_USERNAME=%s\n' "$ADMIN_USERNAME"
+            printf 'ADMIN_PASSWORD=%s\n' "$ADMIN_PASSWORD"
+          } > .env
 
       - name: Build Angular (prod)
         working-directory: ${{ env.APP_DIR }}

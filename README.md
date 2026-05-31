@@ -16,7 +16,6 @@ npm ci
 npm start
 ```
 
-
 Aplikacja będzie dostępna pod `http://localhost:4200`.
 
 ## Build produkcyjny
