@@ -20,4 +20,5 @@ describe('InfoPlComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+  
 });
