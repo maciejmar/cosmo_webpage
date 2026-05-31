@@ -2,7 +2,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const projectRoot = resolve(process.cwd());
-const envPath = resolve(projectRoot, '.env');
+const envCandidates = [
+  resolve(projectRoot, '.env'),
+  resolve(projectRoot, '.emv'),
+  resolve(projectRoot, '..', '.env'),
+  resolve(projectRoot, '..', '.emv')
+];
 const targetPath = resolve(projectRoot, 'src/environments/environment.ts');
 
 const defaults = {
@@ -12,8 +17,9 @@ const defaults = {
 
 function parseEnv(content) {
   const result = {};
+  const normalizedContent = content.replace(/^\uFEFF/, '');
 
-  for (const rawLine of content.split(/\r?\n/)) {
+  for (const rawLine of normalizedContent.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line || line.startsWith('#')) {
       continue;
@@ -32,11 +38,16 @@ function parseEnv(content) {
   return result;
 }
 
-const parsed = existsSync(envPath) ? parseEnv(readFileSync(envPath, 'utf8')) : {};
+const resolvedEnvPath = envCandidates.find((candidate) => existsSync(candidate));
+const parsed = resolvedEnvPath ? parseEnv(readFileSync(resolvedEnvPath, 'utf8')) : {};
 const config = {
   ADMIN_USERNAME: parsed.ADMIN_USERNAME ?? defaults.ADMIN_USERNAME,
   ADMIN_PASSWORD: parsed.ADMIN_PASSWORD ?? defaults.ADMIN_PASSWORD
 };
+
+if (!resolvedEnvPath) {
+  console.warn('No .env/.emv file found for admin credentials. Generated empty environment config.');
+}
 
 mkdirSync(dirname(targetPath), { recursive: true });
 
