@@ -187,6 +187,16 @@ export class AppComponent implements OnInit, OnDestroy {
     return index;
   }
 
+  heroTitleLine(index: number): string {
+    const parts = this.content().hero.title.trim().split(/\s+/).filter(Boolean);
+
+    if (parts.length <= 1) {
+      return index === 0 ? this.content().hero.title : '';
+    }
+
+    return index === 0 ? parts[0] : parts.slice(1).join(' ');
+  }
+
   onKeydown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       this.closeMenu();
@@ -207,7 +217,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private createWorkItem(): ContentBlock {
     return {
       title: 'New material',
-      description: 'Add a new description for this section.'
+      description: 'Add a new description for this section.',
+      icon: '📰'
     };
   }
 

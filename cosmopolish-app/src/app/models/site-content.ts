@@ -1,6 +1,7 @@
 export interface ContentBlock {
   title: string;
   description: string;
+  icon?: string;
 }
 
 export interface AwardItem {
@@ -59,15 +60,33 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     items: [
       {
         title: 'Journalism',
-        description: 'Published in magazines and media outlets covering social, political, and international issues.'
+        description: 'Published in various prestigious magazines and media outlets, covering critical social and political issues.',
+        icon: '📰'
       },
       {
         title: 'Film & Documentary',
-        description: 'Author of film scripts and documentary projects addressing freedom, war, and political responsibility.'
+        description: 'Script writer for "Wings of Freedom 1920" and director of "Casus Belli – who needs this war?"',
+        icon: '🎬'
       },
       {
         title: 'Books',
-        description: 'Writer of books exploring freedom, identity, and the political condition of modern societies.'
+        description: '"I" (2004) and "Free Tibet free China" (2008) - exploring themes of freedom and human rights.',
+        icon: '📚'
+      },
+      {
+        title: 'Human Rights',
+        description: 'Authored comprehensive reports and worked with EU Parliament on international human rights issues.',
+        icon: '🌍'
+      },
+      {
+        title: 'Tibet Advocacy',
+        description: 'Initiated Polish Parliamentary Caucus for Tibet, advancing awareness and support for Tibetan freedom.',
+        icon: '🕊️'
+      },
+      {
+        title: 'Bilingual Publications',
+        description: 'Contributing to both Polish and English media, bridging cultural and linguistic boundaries.',
+        icon: '✍️'
       }
     ]
   },
