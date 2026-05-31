@@ -32,6 +32,7 @@
 /cosmopolish-app/testem.log
 /cosmopolish-app/typings
 /cosmopolish-app/.env
+/.env
 
 # System Files
 .DS_Store

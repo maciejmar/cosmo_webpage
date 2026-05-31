@@ -8,10 +8,17 @@ export class AuthService {
   readonly isLoggedIn = signal(this.readSession());
 
   login(username: string, password: string): boolean {
+    const normalizedUsername = username.trim().toLowerCase();
+    const configuredUsername = environment.adminUsername.trim().toLowerCase();
+    const allowedUsernames = new Set([
+      configuredUsername,
+      configuredUsername.replace('adim', 'admin')
+    ]);
+
     const authenticated =
-      username === environment.adminUsername &&
+      allowedUsernames.has(normalizedUsername) &&
       password === environment.adminPassword &&
-      environment.adminUsername.length > 0 &&
+      configuredUsername.length > 0 &&
       environment.adminPassword.length > 0;
 
     if (authenticated) {
