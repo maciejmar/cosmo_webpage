@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 
 const SESSION_STORAGE_KEY = 'cosmopolish-admin-session';
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_USERNAME = 'cosmo-adim';
+const ADMIN_PASSWORD = '1@aA2#$bB-c1o2s3m4o5';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

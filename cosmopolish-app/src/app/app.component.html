@@ -3,16 +3,27 @@
     <div class="logo">CosmoPolish</div>
 
     <ul class="nav-links desktop-only">
-      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">Home</a></li>
-      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">About</a></li>
-      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">Work</a></li>
-      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">Awards</a></li>
-      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">Contact</a></li>
+      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">{{ ui().home }}</a></li>
+      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
+      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
+      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
+      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">{{ ui().contact }}</a></li>
     </ul>
 
-    <div class="nav-admin desktop-only">
+    <div class="nav-tools desktop-only">
+      <div class="language-switch" [attr.aria-label]="ui().language">
+        <button class="language-switch__button" type="button" [class.active]="activeLanguage() === 'en'" (click)="switchLanguage('en')">
+          <span class="language-switch__icon">🌐</span>
+          <span>EN</span>
+        </button>
+        <button class="language-switch__button" type="button" [class.active]="activeLanguage() === 'pl'" (click)="switchLanguage('pl')">
+          <span class="language-switch__icon">🌐</span>
+          <span>PL</span>
+        </button>
+      </div>
+
       <button class="admin-link" type="button" (click)="toggleAdminPanel()">
-        {{ isLoggedIn() ? 'Admin Panel' : 'Admin Login' }}
+        {{ isLoggedIn() ? ui().adminPanel : ui().adminLogin }}
       </button>
     </div>
 
@@ -41,12 +52,16 @@
     aria-modal="true"
     aria-label="Main menu">
     <ul class="mobile-links" (click)="closeMenu()">
-      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">Home</a></li>
-      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">About</a></li>
-      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">Work</a></li>
-      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">Awards</a></li>
-      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">Contact</a></li>
-      <li><button class="mobile-admin-link" type="button" (click)="toggleAdminPanel()">Panel admina</button></li>
+      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">{{ ui().home }}</a></li>
+      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
+      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
+      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
+      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">{{ ui().contact }}</a></li>
+      <li class="mobile-language-row">
+        <button class="mobile-admin-link" type="button" (click)="switchLanguage('en')">🌐 EN</button>
+        <button class="mobile-admin-link" type="button" (click)="switchLanguage('pl')">🌐 PL</button>
+      </li>
+      <li><button class="mobile-admin-link" type="button" (click)="toggleAdminPanel()">{{ ui().adminPanel }}</button></li>
     </ul>
   </div>
 </nav>
@@ -54,176 +69,177 @@
 <aside class="admin-panel" [class.open]="isAdminPanelOpen">
   <div class="admin-panel__header">
     <div>
-      <p class="admin-eyebrow">Panel użytkownika</p>
-      <h2>{{ isLoggedIn() ? 'Zarządzanie treścią' : 'Logowanie administratora' }}</h2>
+      <p class="admin-eyebrow">{{ ui().userPanel }}</p>
+      <h2>{{ isLoggedIn() ? ui().manageContent : ui().adminSignIn }}</h2>
     </div>
     <button class="icon-button" type="button" (click)="closeAdminPanel()">×</button>
   </div>
 
   <ng-container *ngIf="!isLoggedIn(); else adminEditor">
     <p class="admin-copy">
-      Zaloguj się jako administrator, aby dodawać materiały i edytować sekcje strony.
+      {{ ui().adminHint }}
     </p>
 
     <form class="login-form" (ngSubmit)="login()">
       <label>
         <span>Login</span>
-        <input type="text" name="username" [(ngModel)]="loginForm.username" placeholder="admin" />
+        <input type="text" name="username" [(ngModel)]="loginForm.username" placeholder="cosmo-adim" />
       </label>
 
       <label>
-        <span>Hasło</span>
-        <input type="password" name="password" [(ngModel)]="loginForm.password" placeholder="admin123" />
+        <span>{{ ui().password }}</span>
+        <input type="password" name="password" [(ngModel)]="loginForm.password" placeholder="1@aA2#$bB-c1o2s3m4o5" />
       </label>
 
       <p class="error-message" *ngIf="loginError">{{ loginError }}</p>
 
-      <button class="panel-submit" type="submit">Zaloguj</button>
+      <button class="panel-submit" type="submit">{{ ui().adminLogin }}</button>
     </form>
 
     <div class="credentials-hint">
-      <p>Dane testowe:</p>
+      <p>{{ ui().testCredentials }}</p>
       <p><strong>Login:</strong> {{ adminCredentials.username }}</p>
-      <p><strong>Hasło:</strong> {{ adminCredentials.password }}</p>
+      <p><strong>{{ ui().password }}:</strong> {{ adminCredentials.password }}</p>
     </div>
   </ng-container>
 
   <ng-template #adminEditor>
     <div class="admin-meta">
-      <span>{{ workPreviewCount() }} materiały w sekcji Work</span>
-      <span>{{ awardPreviewCount() }} wpisy w sekcji Awards</span>
+      <span>{{ ui().currentEditor }}: {{ activeLanguage().toUpperCase() }}</span>
+      <span>{{ workPreviewCount() }} {{ ui().workItems }}</span>
+      <span>{{ awardPreviewCount() }} {{ ui().awardItems }}</span>
     </div>
 
     <div class="admin-sections">
       <section class="editor-card">
-        <h3>Hero</h3>
+        <h3>{{ ui().hero }}</h3>
         <label>
-          <span>Tytuł</span>
+          <span>{{ ui().title }}</span>
           <input type="text" name="heroTitle" [(ngModel)]="editableContent.hero.title" />
         </label>
         <label>
-          <span>Podtytuł</span>
+          <span>{{ ui().description }}</span>
           <textarea name="heroSubtitle" [(ngModel)]="editableContent.hero.subtitle" rows="3"></textarea>
         </label>
         <label>
-          <span>Przycisk główny</span>
+          <span>{{ ui().mainButton }}</span>
           <input type="text" name="heroPrimaryCta" [(ngModel)]="editableContent.hero.primaryCta" />
         </label>
         <label>
-          <span>Przycisk poboczny</span>
+          <span>{{ ui().secondaryButton }}</span>
           <input type="text" name="heroSecondaryCta" [(ngModel)]="editableContent.hero.secondaryCta" />
         </label>
       </section>
 
       <section class="editor-card">
-        <h3>About</h3>
+        <h3>{{ ui().about }}</h3>
         <label>
-          <span>Nagłówek sekcji</span>
+          <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="aboutTitle" [(ngModel)]="editableContent.about.title" />
         </label>
         <label>
-          <span>Lead</span>
+          <span>{{ ui().lead }}</span>
           <textarea name="aboutLead" [(ngModel)]="editableContent.about.lead" rows="3"></textarea>
         </label>
 
         <div class="repeater">
           <div class="repeater__header">
-            <span>Akapity</span>
-            <button class="ghost-button" type="button" (click)="addAboutParagraph()">Dodaj akapit</button>
+            <span>{{ ui().description }}</span>
+            <button class="ghost-button" type="button" (click)="addAboutParagraph()">{{ ui().addParagraph }}</button>
           </div>
 
           <div class="repeater-item" *ngFor="let paragraph of editableContent.about.paragraphs; let index = index; trackBy: trackByIndex">
             <textarea [name]="'aboutParagraph' + index" [(ngModel)]="editableContent.about.paragraphs[index]" rows="4"></textarea>
-            <button class="remove-button" type="button" (click)="removeAboutParagraph(index)">Usuń</button>
+            <button class="remove-button" type="button" (click)="removeAboutParagraph(index)">{{ ui().remove }}</button>
           </div>
         </div>
       </section>
 
       <section class="editor-card">
         <div class="repeater__header">
-          <h3>Work</h3>
-          <button class="ghost-button" type="button" (click)="addWorkItem()">Dodaj materiał</button>
+          <h3>{{ ui().work }}</h3>
+          <button class="ghost-button" type="button" (click)="addWorkItem()">{{ ui().addMaterial }}</button>
         </div>
 
         <label>
-          <span>Nagłówek sekcji</span>
+          <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="workTitle" [(ngModel)]="editableContent.work.title" />
         </label>
 
         <div class="repeater-item" *ngFor="let item of editableContent.work.items; let index = index; trackBy: trackByIndex">
           <label>
-            <span>Ikona</span>
+            <span>{{ ui().icon }}</span>
             <input [name]="'workIcon' + index" type="text" [(ngModel)]="item.icon" />
           </label>
           <label>
-            <span>Tytuł materiału</span>
+            <span>{{ ui().materialTitle }}</span>
             <input [name]="'workTitle' + index" type="text" [(ngModel)]="item.title" />
           </label>
           <label>
-            <span>Opis</span>
+            <span>{{ ui().description }}</span>
             <textarea [name]="'workDescription' + index" [(ngModel)]="item.description" rows="4"></textarea>
           </label>
-          <button class="remove-button" type="button" (click)="removeWorkItem(index)">Usuń materiał</button>
+          <button class="remove-button" type="button" (click)="removeWorkItem(index)">{{ ui().remove }}</button>
         </div>
       </section>
 
       <section class="editor-card">
         <div class="repeater__header">
-          <h3>Awards</h3>
-          <button class="ghost-button" type="button" (click)="addAwardItem()">Dodaj wpis</button>
+          <h3>{{ ui().awards }}</h3>
+          <button class="ghost-button" type="button" (click)="addAwardItem()">{{ ui().addEntry }}</button>
         </div>
 
         <label>
-          <span>Nagłówek sekcji</span>
+          <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="awardsTitle" [(ngModel)]="editableContent.awards.title" />
         </label>
 
         <div class="repeater-item" *ngFor="let item of editableContent.awards.items; let index = index; trackBy: trackByIndex">
           <label>
-            <span>Rok</span>
+            <span>{{ ui().year }}</span>
             <input [name]="'awardYear' + index" type="text" [(ngModel)]="item.year" />
           </label>
           <label>
-            <span>Tytuł</span>
+            <span>{{ ui().title }}</span>
             <input [name]="'awardTitle' + index" type="text" [(ngModel)]="item.title" />
           </label>
           <label>
-            <span>Opis</span>
+            <span>{{ ui().description }}</span>
             <textarea [name]="'awardDescription' + index" [(ngModel)]="item.description" rows="4"></textarea>
           </label>
-          <button class="remove-button" type="button" (click)="removeAwardItem(index)">Usuń wpis</button>
+          <button class="remove-button" type="button" (click)="removeAwardItem(index)">{{ ui().remove }}</button>
         </div>
       </section>
 
       <section class="editor-card">
-        <h3>Contact</h3>
+        <h3>{{ ui().contact }}</h3>
         <label>
-          <span>Nagłówek sekcji</span>
+          <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="contactTitle" [(ngModel)]="editableContent.contact.title" />
         </label>
         <label>
-          <span>Email</span>
+          <span>{{ ui().email }}</span>
           <input type="email" name="contactEmail" [(ngModel)]="editableContent.contact.email" />
         </label>
         <label>
-          <span>Etykieta X / Twitter</span>
+          <span>{{ ui().twitterLabel }}</span>
           <input type="text" name="contactTwitterLabel" [(ngModel)]="editableContent.contact.twitterLabel" />
         </label>
         <label>
-          <span>Link X / Twitter</span>
+          <span>{{ ui().twitterUrl }}</span>
           <input type="url" name="contactTwitterUrl" [(ngModel)]="editableContent.contact.twitterUrl" />
         </label>
         <label>
-          <span>Cytat</span>
+          <span>{{ ui().quote }}</span>
           <textarea name="contactQuote" [(ngModel)]="editableContent.contact.quote" rows="4"></textarea>
         </label>
       </section>
     </div>
 
     <div class="admin-actions">
-      <button class="panel-submit" type="button" (click)="saveContent()">Zapisz zmiany</button>
-      <button class="ghost-button panel-button" type="button" (click)="resetContent()">Przywróć domyślne</button>
-      <button class="logout-button" type="button" (click)="logout()">Wyloguj</button>
+      <button class="panel-submit" type="button" (click)="saveContent()">{{ ui().saveChanges }}</button>
+      <button class="ghost-button panel-button" type="button" (click)="resetContent()">{{ ui().resetDefault }}</button>
+      <button class="logout-button" type="button" (click)="logout()">{{ ui().logout }}</button>
     </div>
   </ng-template>
 </aside>
@@ -318,7 +334,7 @@
         <div class="contact-item">
           <div class="contact-icon">📧</div>
           <div>
-            <h3>Email</h3>
+            <h3>{{ ui().email }}</h3>
             <a [href]="'mailto:' + content().contact.email">{{ content().contact.email }}</a>
           </div>
         </div>
@@ -345,7 +361,7 @@
   <div class="container footer-bar">
     <p>&copy; 2026 CosmoPolish. All rights reserved.</p>
     <button class="footer-admin-link" type="button" (click)="toggleAdminPanel()">
-      {{ isLoggedIn() ? 'Otwórz panel admina' : 'Admin login' }}
+      {{ isLoggedIn() ? ui().footerAdmin : ui().adminLogin }}
     </button>
   </div>
 </footer>

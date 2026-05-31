@@ -1,9 +1,141 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnDestroy, OnInit, computed, inject } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AwardItem, ContentBlock, SiteContent } from './models/site-content';
+import { AwardItem, ContentBlock, LanguageCode, SiteContent } from './models/site-content';
 import { AuthService } from './services/auth.service';
 import { ContentService } from './services/content.service';
+
+const LANGUAGE_STORAGE_KEY = 'cosmopolish-language';
+
+interface UiText {
+  home: string;
+  about: string;
+  work: string;
+  awards: string;
+  contact: string;
+  adminPanel: string;
+  adminLogin: string;
+  footerAdmin: string;
+  adminHint: string;
+  loginError: string;
+  userPanel: string;
+  manageContent: string;
+  adminSignIn: string;
+  password: string;
+  testCredentials: string;
+  saveChanges: string;
+  resetDefault: string;
+  logout: string;
+  addParagraph: string;
+  addMaterial: string;
+  addEntry: string;
+  remove: string;
+  sectionHeading: string;
+  mainButton: string;
+  secondaryButton: string;
+  materialTitle: string;
+  quote: string;
+  icon: string;
+  year: string;
+  title: string;
+  description: string;
+  lead: string;
+  language: string;
+  currentEditor: string;
+  workItems: string;
+  awardItems: string;
+  hero: string;
+  email: string;
+  twitterLabel: string;
+  twitterUrl: string;
+}
+
+const UI_TEXT: Record<LanguageCode, UiText> = {
+  en: {
+    home: 'Home',
+    about: 'About',
+    work: 'Work',
+    awards: 'Awards',
+    contact: 'Contact',
+    adminPanel: 'Admin Panel',
+    adminLogin: 'Admin Login',
+    footerAdmin: 'Open admin panel',
+    adminHint: 'Log in as administrator to add materials and edit the content of this website.',
+    loginError: 'Invalid username or password.',
+    userPanel: 'User panel',
+    manageContent: 'Content management',
+    adminSignIn: 'Administrator sign in',
+    password: 'Password',
+    testCredentials: 'Test credentials:',
+    saveChanges: 'Save changes',
+    resetDefault: 'Reset current language',
+    logout: 'Log out',
+    addParagraph: 'Add paragraph',
+    addMaterial: 'Add material',
+    addEntry: 'Add entry',
+    remove: 'Remove',
+    sectionHeading: 'Section heading',
+    mainButton: 'Primary button',
+    secondaryButton: 'Secondary button',
+    materialTitle: 'Material title',
+    quote: 'Quote',
+    icon: 'Icon',
+    year: 'Year',
+    title: 'Title',
+    description: 'Description',
+    lead: 'Lead',
+    language: 'Language',
+    currentEditor: 'Editing language',
+    workItems: 'items in Work',
+    awardItems: 'entries in Awards',
+    hero: 'Hero',
+    email: 'Email',
+    twitterLabel: 'X / Twitter label',
+    twitterUrl: 'X / Twitter URL'
+  },
+  pl: {
+    home: 'Start',
+    about: 'O mnie',
+    work: 'Działalność',
+    awards: 'Nagrody',
+    contact: 'Kontakt',
+    adminPanel: 'Panel admina',
+    adminLogin: 'Logowanie',
+    footerAdmin: 'Otwórz panel admina',
+    adminHint: 'Zaloguj się jako administrator, aby dodawać materiały i edytować treści tej strony.',
+    loginError: 'Nieprawidłowy login lub hasło.',
+    userPanel: 'Panel użytkownika',
+    manageContent: 'Zarządzanie treścią',
+    adminSignIn: 'Logowanie administratora',
+    password: 'Hasło',
+    testCredentials: 'Dane testowe:',
+    saveChanges: 'Zapisz zmiany',
+    resetDefault: 'Przywróć bieżący język',
+    logout: 'Wyloguj',
+    addParagraph: 'Dodaj akapit',
+    addMaterial: 'Dodaj materiał',
+    addEntry: 'Dodaj wpis',
+    remove: 'Usuń',
+    sectionHeading: 'Nagłówek sekcji',
+    mainButton: 'Przycisk główny',
+    secondaryButton: 'Przycisk poboczny',
+    materialTitle: 'Tytuł materiału',
+    quote: 'Cytat',
+    icon: 'Ikona',
+    year: 'Rok',
+    title: 'Tytuł',
+    description: 'Opis',
+    lead: 'Lead',
+    language: 'Język',
+    currentEditor: 'Edytowany język',
+    workItems: 'materiały w sekcji Work',
+    awardItems: 'wpisy w sekcji Awards',
+    hero: 'Hero',
+    email: 'Email',
+    twitterLabel: 'Etykieta X / Twitter',
+    twitterUrl: 'Link X / Twitter'
+  }
+};
 
 @Component({
   selector: 'app-root',
@@ -26,13 +158,16 @@ export class AppComponent implements OnInit, OnDestroy {
     username: '',
     password: ''
   };
-  editableContent: SiteContent = this.contentService.createEditableCopy();
+  activeLanguage = signal<LanguageCode>(this.readLanguage());
+  editableContent: SiteContent = this.contentService.createEditableCopy(this.activeLanguage());
 
-  readonly content = this.contentService.content;
+  readonly localizedContent = this.contentService.content;
+  readonly content = computed(() => this.localizedContent()[this.activeLanguage()]);
   readonly isLoggedIn = this.authService.isLoggedIn;
   readonly adminCredentials = this.authService.getCredentialsHint();
   readonly workPreviewCount = computed(() => this.content().work.items.length);
   readonly awardPreviewCount = computed(() => this.content().awards.items.length);
+  readonly ui = computed(() => UI_TEXT[this.activeLanguage()]);
 
   @HostListener('window:scroll')
   onWindowScroll() {
@@ -113,7 +248,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.loginError = '';
 
     if (this.isAdminPanelOpen) {
-      this.editableContent = this.contentService.createEditableCopy();
+      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
       this.closeMenu();
     }
 
@@ -129,16 +264,28 @@ export class AppComponent implements OnInit, OnDestroy {
     this.lockBodyScroll(this.isMenuOpen);
   }
 
+  switchLanguage(language: LanguageCode) {
+    if (this.activeLanguage() === language) {
+      return;
+    }
+
+    this.activeLanguage.set(language);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    this.loginError = '';
+    this.editableContent = this.contentService.createEditableCopy(language);
+    setTimeout(() => this.observeElements(), 50);
+  }
+
   login() {
     this.loginError = '';
     const success = this.authService.login(this.loginForm.username.trim(), this.loginForm.password);
 
     if (!success) {
-      this.loginError = 'Nieprawidłowy login lub hasło.';
+      this.loginError = this.ui().loginError;
       return;
     }
 
-    this.editableContent = this.contentService.createEditableCopy();
+    this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
     this.loginForm.password = '';
   }
 
@@ -149,13 +296,13 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   saveContent() {
-    this.contentService.save(this.editableContent);
-    this.editableContent = this.contentService.createEditableCopy();
+    this.contentService.save(this.activeLanguage(), this.editableContent);
+    this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
     setTimeout(() => this.observeElements(), 50);
   }
 
   resetContent() {
-    this.editableContent = this.contentService.reset();
+    this.editableContent = this.contentService.reset(this.activeLanguage());
     setTimeout(() => this.observeElements(), 50);
   }
 
@@ -228,5 +375,10 @@ export class AppComponent implements OnInit, OnDestroy {
       title: 'New achievement',
       description: 'Describe the distinction, project, or milestone.'
     };
+  }
+
+  private readLanguage(): LanguageCode {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return stored === 'pl' ? 'pl' : 'en';
   }
 }
