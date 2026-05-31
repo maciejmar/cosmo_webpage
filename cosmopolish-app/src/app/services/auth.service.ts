@@ -10,13 +10,9 @@ export class AuthService {
   login(username: string, password: string): boolean {
     const normalizedUsername = username.trim().toLowerCase();
     const configuredUsername = environment.adminUsername.trim().toLowerCase();
-    const allowedUsernames = new Set([
-      configuredUsername,
-      configuredUsername.replace('adim', 'admin')
-    ]);
 
     const authenticated =
-      allowedUsernames.has(normalizedUsername) &&
+      normalizedUsername === configuredUsername &&
       password === environment.adminPassword &&
       configuredUsername.length > 0 &&
       environment.adminPassword.length > 0;
