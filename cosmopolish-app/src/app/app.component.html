@@ -1,17 +1,21 @@
 <nav class="navbar" [class.scrolled]="isScrolled">
   <div class="nav-content">
-    <div class="logo">CosmoPolish</div>
+    <button class="logo" type="button" (click)="scrollToSection('home')">CosmoPolish</button>
 
-    <!-- Desktop links (ukryte na mobile) -->
     <ul class="nav-links desktop-only">
-      <li><a (click)="scrollToSection('home')"   [class.active]="activeSection === 'home'">Home</a></li>
-      <li><a (click)="scrollToSection('about')"  [class.active]="activeSection === 'about'">About</a></li>
-      <li><a (click)="scrollToSection('work')"   [class.active]="activeSection === 'work'">Work</a></li>
+      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">Home</a></li>
+      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">About</a></li>
+      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">Work</a></li>
       <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">Awards</a></li>
       <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">Contact</a></li>
     </ul>
 
-    <!-- Hamburger (pokazywany tylko na mobile) -->
+    <div class="nav-actions desktop-only">
+      <button class="admin-trigger" type="button" (click)="toggleAdminPanel()">
+        {{ isLoggedIn() ? 'Admin Panel' : 'Admin Login' }}
+      </button>
+    </div>
+
     <button
       class="menu-toggle mobile-only"
       type="button"
@@ -19,82 +23,244 @@
       [class.open]="isMenuOpen"
       [attr.aria-expanded]="isMenuOpen"
       [attr.aria-label]="isMenuOpen ? 'Close menu' : 'Open menu'">
-      <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path class="line top"    d="M4 7H20"></path>
-        <path class="line middle" d="M4 12H20"></path>
-        <path class="line bottom" d="M4 17H20"></path>
-      </svg>
+      <span></span>
+      <span></span>
+      <span></span>
     </button>
   </div>
 
-  <!-- Overlay + mobilne menu -->
   <div class="mobile-menu-overlay" *ngIf="isMenuOpen" (click)="closeMenu()" aria-hidden="true"></div>
 
-  <div
-    id="mobile-menu"
-    class="mobile-menu"
-    [class.open]="isMenuOpen"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Main menu">
+  <div class="mobile-menu" [class.open]="isMenuOpen">
     <ul class="mobile-links" (click)="closeMenu()">
-      <li><a (click)="scrollToSection('home')"   [class.active]="activeSection === 'home'">Home</a></li>
-      <li><a (click)="scrollToSection('about')"  [class.active]="activeSection === 'about'">About</a></li>
-      <li><a (click)="scrollToSection('work')"   [class.active]="activeSection === 'work'">Work</a></li>
+      <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">Home</a></li>
+      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">About</a></li>
+      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">Work</a></li>
       <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">Awards</a></li>
       <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">Contact</a></li>
+      <li><button class="mobile-admin-trigger" type="button" (click)="toggleAdminPanel()">Panel admina</button></li>
     </ul>
   </div>
 </nav>
 
+<aside class="admin-panel" [class.open]="isAdminPanelOpen">
+  <div class="admin-panel__header">
+    <div>
+      <p class="admin-eyebrow">Panel użytkownika</p>
+      <h2>{{ isLoggedIn() ? 'Zarządzanie treścią' : 'Logowanie administratora' }}</h2>
+    </div>
+    <button class="icon-button" type="button" (click)="closeAdminPanel()">×</button>
+  </div>
+
+  <ng-container *ngIf="!isLoggedIn(); else adminEditor">
+    <p class="admin-copy">
+      Zaloguj się jako administrator, aby dodawać materiały i edytować sekcje strony.
+    </p>
+
+    <form class="login-form" (ngSubmit)="login()">
+      <label>
+        <span>Login</span>
+        <input type="text" name="username" [(ngModel)]="loginForm.username" placeholder="admin" />
+      </label>
+
+      <label>
+        <span>Hasło</span>
+        <input type="password" name="password" [(ngModel)]="loginForm.password" placeholder="admin123" />
+      </label>
+
+      <p class="error-message" *ngIf="loginError">{{ loginError }}</p>
+
+      <button class="btn-primary panel-button" type="submit">Zaloguj</button>
+    </form>
+
+    <div class="credentials-hint">
+      <p>Dane testowe:</p>
+      <p><strong>Login:</strong> {{ adminCredentials.username }}</p>
+      <p><strong>Hasło:</strong> {{ adminCredentials.password }}</p>
+    </div>
+  </ng-container>
+
+  <ng-template #adminEditor>
+    <div class="admin-meta">
+      <span>{{ workPreviewCount() }} materiały w sekcji Work</span>
+      <span>{{ awardPreviewCount() }} wpisy w sekcji Awards</span>
+    </div>
+
+    <div class="admin-sections">
+      <section class="editor-card">
+        <h3>Hero</h3>
+        <label>
+          <span>Tytuł</span>
+          <input type="text" name="heroTitle" [(ngModel)]="editableContent.hero.title" />
+        </label>
+        <label>
+          <span>Podtytuł</span>
+          <textarea name="heroSubtitle" [(ngModel)]="editableContent.hero.subtitle" rows="3"></textarea>
+        </label>
+        <label>
+          <span>Przycisk główny</span>
+          <input type="text" name="heroPrimaryCta" [(ngModel)]="editableContent.hero.primaryCta" />
+        </label>
+        <label>
+          <span>Przycisk poboczny</span>
+          <input type="text" name="heroSecondaryCta" [(ngModel)]="editableContent.hero.secondaryCta" />
+        </label>
+      </section>
+
+      <section class="editor-card">
+        <h3>About</h3>
+        <label>
+          <span>Nagłówek sekcji</span>
+          <input type="text" name="aboutTitle" [(ngModel)]="editableContent.about.title" />
+        </label>
+        <label>
+          <span>Lead</span>
+          <textarea name="aboutLead" [(ngModel)]="editableContent.about.lead" rows="3"></textarea>
+        </label>
+
+        <div class="repeater">
+          <div class="repeater__header">
+            <span>Akapity</span>
+            <button class="btn-secondary ghost-button" type="button" (click)="addAboutParagraph()">Dodaj akapit</button>
+          </div>
+
+          <div
+            class="repeater-item"
+            *ngFor="let paragraph of editableContent.about.paragraphs; let index = index; trackBy: trackByIndex">
+            <textarea
+              [name]="'aboutParagraph' + index"
+              [(ngModel)]="editableContent.about.paragraphs[index]"
+              rows="4"></textarea>
+            <button class="remove-button" type="button" (click)="removeAboutParagraph(index)">Usuń</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="editor-card">
+        <div class="repeater__header">
+          <h3>Work</h3>
+          <button class="btn-secondary ghost-button" type="button" (click)="addWorkItem()">Dodaj materiał</button>
+        </div>
+
+        <label>
+          <span>Nagłówek sekcji</span>
+          <input type="text" name="workTitle" [(ngModel)]="editableContent.work.title" />
+        </label>
+
+        <div
+          class="repeater-item"
+          *ngFor="let item of editableContent.work.items; let index = index; trackBy: trackByIndex">
+          <label>
+            <span>Tytuł materiału</span>
+            <input [name]="'workTitle' + index" type="text" [(ngModel)]="item.title" />
+          </label>
+          <label>
+            <span>Opis</span>
+            <textarea [name]="'workDescription' + index" [(ngModel)]="item.description" rows="4"></textarea>
+          </label>
+          <button class="remove-button" type="button" (click)="removeWorkItem(index)">Usuń materiał</button>
+        </div>
+      </section>
+
+      <section class="editor-card">
+        <div class="repeater__header">
+          <h3>Awards</h3>
+          <button class="btn-secondary ghost-button" type="button" (click)="addAwardItem()">Dodaj wpis</button>
+        </div>
+
+        <label>
+          <span>Nagłówek sekcji</span>
+          <input type="text" name="awardsTitle" [(ngModel)]="editableContent.awards.title" />
+        </label>
+
+        <div
+          class="repeater-item"
+          *ngFor="let item of editableContent.awards.items; let index = index; trackBy: trackByIndex">
+          <label>
+            <span>Rok</span>
+            <input [name]="'awardYear' + index" type="text" [(ngModel)]="item.year" />
+          </label>
+          <label>
+            <span>Tytuł</span>
+            <input [name]="'awardTitle' + index" type="text" [(ngModel)]="item.title" />
+          </label>
+          <label>
+            <span>Opis</span>
+            <textarea [name]="'awardDescription' + index" [(ngModel)]="item.description" rows="4"></textarea>
+          </label>
+          <button class="remove-button" type="button" (click)="removeAwardItem(index)">Usuń wpis</button>
+        </div>
+      </section>
+
+      <section class="editor-card">
+        <h3>Contact</h3>
+        <label>
+          <span>Nagłówek sekcji</span>
+          <input type="text" name="contactTitle" [(ngModel)]="editableContent.contact.title" />
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" name="contactEmail" [(ngModel)]="editableContent.contact.email" />
+        </label>
+        <label>
+          <span>Etykieta X / Twitter</span>
+          <input type="text" name="contactTwitterLabel" [(ngModel)]="editableContent.contact.twitterLabel" />
+        </label>
+        <label>
+          <span>Link X / Twitter</span>
+          <input type="url" name="contactTwitterUrl" [(ngModel)]="editableContent.contact.twitterUrl" />
+        </label>
+        <label>
+          <span>Cytat</span>
+          <textarea name="contactQuote" [(ngModel)]="editableContent.contact.quote" rows="4"></textarea>
+        </label>
+      </section>
+    </div>
+
+    <div class="admin-actions">
+      <button class="btn-primary panel-button" type="button" (click)="saveContent()">Zapisz zmiany</button>
+      <button class="btn-secondary panel-button" type="button" (click)="resetContent()">Przywróć domyślne</button>
+      <button class="logout-button" type="button" (click)="logout()">Wyloguj</button>
+    </div>
+  </ng-template>
+</aside>
+
+<div class="admin-backdrop" *ngIf="isAdminPanelOpen" (click)="closeAdminPanel()"></div>
 
 <section id="home" class="hero">
   <div class="hero-background">
-    <div class="floating-shapes">
-      <div class="shape shape-1"></div>
-      <div class="shape shape-2"></div>
-      <div class="shape shape-3"></div>
-      <div class="shape shape-4"></div>
-    </div>
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
   </div>
-  
-  <!-- <div class="hero-foreground" aria-hidden="true">
-    <div class="shape shape-1-fore"></div>
-  </div> -->
-  <div class="hero-content hero-content-frame">
-    <h1 class="hero-title">
-      <span class="floating-text">Michał</span>
-      <span class="floating-text delay-1">Orzechowski</span>
-    </h1>
-    <p class="hero-subtitle fade-in">Journalist • Writer • Human Rights Activist</p>
+
+  <div class="hero-content">
+    <p class="hero-kicker fade-in">CosmoPolish</p>
+    <h1 class="hero-title">{{ content().hero.title }}</h1>
+    <p class="hero-subtitle fade-in">{{ content().hero.subtitle }}</p>
     <div class="hero-cta fade-in">
-      <button class="btn-primary" (click)="scrollToSection('about')">Discover More</button>
-      <button class="btn-secondary" (click)="scrollToSection('contact')">Get in Touch</button>
+      <button class="btn-primary" type="button" (click)="scrollToSection('about')">{{ content().hero.primaryCta }}</button>
+      <button class="btn-secondary" type="button" (click)="scrollToSection('contact')">{{ content().hero.secondaryCta }}</button>
     </div>
   </div>
-  <div class="scroll-indicator">
-    <div class="mouse"></div>
-  </div>
-  <div class="ice-overlay" aria-hidden="true">
-  <div class="ice ice-1"></div>
-  <div class="ice ice-2"></div>
-  <div class="ice ice-3"></div>
-  <div class="ice ice-4"></div>
-</div>
 </section>
 
 <section id="about" class="about">
   <div class="container">
-    <h2 class="section-title slide-up">About</h2>
-    <div class="about-content">
-      <div class="about-text slide-up">
-        <p class="lead">Polish journalist, writer, and dedicated human rights activist with a strong commitment to freedom and democracy.</p>
-        <p>Michal Orzechowski publishes extensively in both Polish and English media, bringing critical issues to international attention. His work spans multiple formats including books, film scripts, and comprehensive human rights reports.</p>
-        <p>With deep experience working alongside the EU Parliament, Michal has been instrumental in advancing human rights causes, including initiating the Polish Parliamentary Caucus for Tibet.</p>
+    <h2 class="section-title slide-up">{{ content().about.title }}</h2>
+    <div class="about-layout">
+      <div class="about-copy slide-up">
+        <p class="about-lead">{{ content().about.lead }}</p>
+        <p *ngFor="let paragraph of content().about.paragraphs">{{ paragraph }}</p>
       </div>
-      <div class="about-image slide-up">
-        <div class="image-placeholder">
-          <div class="image-decoration"></div>
+
+      <div class="about-aside slide-up">
+        <div class="profile-card">
+          <img src="assets/michal.png" alt="Michał Orzechowski" />
+          <div>
+            <p class="profile-label">Profile</p>
+            <h3>Public voice for freedom, democracy, and civil rights.</h3>
+          </div>
         </div>
       </div>
     </div>
@@ -103,106 +269,58 @@
 
 <section id="work" class="work">
   <div class="container">
-    <h2 class="section-title slide-up">Professional Work</h2>
-
+    <h2 class="section-title slide-up">{{ content().work.title }}</h2>
     <div class="work-grid">
-      <div class="card padding">
-        <div class="card-icon">📰</div>
-        <h3>Journalism</h3>
-        <p>Published in various prestigious magazines and media outlets, covering critical social and political issues.</p>
-      </div>
-
-      <div class="card padding">
-        <div class="card-icon">🎬</div>
-        <h3>Film & Documentary</h3>
-        <p>Script writer for "Wings of Freedom 1920" and director of "Casus Belli – who needs this war?"</p>
-      </div>
-
-      <div class="card padding">
-        <div class="card-icon">📚</div>
-        <h3>Books</h3>
-        <p>"I" (2004) and "Free Tibet free China" (2008) - exploring themes of freedom and human rights.</p>
-      </div>
-
-      <div class="card padding">
-        <div class="card-icon">🌍</div>
-        <h3>Human Rights</h3>
-        <p>Authored comprehensive reports and worked with EU Parliament on international human rights issues.</p>
-      </div>
-
-      <div class="card padding">
-        <div class="card-icon">🕊️</div>
-        <h3>Tibet Advocacy</h3>
-        <p>Initiated Polish Parliamentary Caucus for Tibet, advancing awareness and support for Tibetan freedom.</p>
-      </div>
-
-      <div class="card padding">
-        <div class="card-icon">✍️</div>
-        <h3>Bilingual Publications</h3>
-        <p>Contributing to both Polish and English media, bridging cultural and linguistic boundaries.</p>
-      </div>
+      <article class="card" *ngFor="let item of content().work.items">
+        <p class="card-tag">Material</p>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.description }}</p>
+      </article>
     </div>
   </div>
 </section>
 
 <section id="awards" class="awards">
   <div class="container">
-    <h2 class="section-title slide-up">Recognition & Awards</h2>
-
+    <h2 class="section-title slide-up">{{ content().awards.title }}</h2>
     <div class="timeline">
-      <div class="timeline-item slide-up">
-        <div class="timeline-year">2019</div>
+      <article class="timeline-item" *ngFor="let item of content().awards.items">
+        <p class="timeline-year">{{ item.year }}</p>
         <div class="timeline-content">
-          <h3>Badge of Honor</h3>
-          <p>Anti-communist Opposition Activist recognition for dedication to democratic values and freedom.</p>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.description }}</p>
         </div>
-      </div>
-
-      <div class="timeline-item slide-up">
-        <div class="timeline-year">2008</div>
-        <div class="timeline-content">
-          <h3>City of Warszawa Merit Award</h3>
-          <p>Recognized for outstanding contributions to the city and its cultural landscape.</p>
-        </div>
-      </div>
+      </article>
     </div>
   </div>
 </section>
 
 <section id="contact" class="contact">
   <div class="container">
-    <h2 class="section-title slide-up">Get in Touch</h2>
-
-    <div class="contact-content">
-      <div class="contact-info slide-up">
-        <div class="contact-item">
-          <div class="contact-icon">📧</div>
-          <div>
-            <h3>Email</h3>
-            <a href="mailto:worldsolidarity@interia.pl">worldsolidarity&#64;interia.pl</a>
-          </div>
-        </div>
-
-        <div class="contact-item">
-          <div class="contact-icon">🐦</div>
-          <div>
-            <h3>X - Twitter</h3>
-            <a href="https://twitter.com/CosmoPolishNET" target="_blank" rel="noopener">&#64;CosmoPolishNET</a>
-          </div>
-        </div>
+    <h2 class="section-title slide-up">{{ content().contact.title }}</h2>
+    <div class="contact-layout">
+      <div class="contact-card slide-up">
+        <p class="contact-label">Email</p>
+        <a [href]="'mailto:' + content().contact.email">{{ content().contact.email }}</a>
       </div>
 
-      <div class="contact-quote slide-up">
-        <blockquote>
-          "Freedom is not given, it is won through persistent dedication and unwavering commitment to human rights."
-        </blockquote>
+      <div class="contact-card slide-up">
+        <p class="contact-label">X / Twitter</p>
+        <a [href]="content().contact.twitterUrl" target="_blank" rel="noopener">{{ content().contact.twitterLabel }}</a>
       </div>
+
+      <blockquote class="quote-card slide-up">
+        "{{ content().contact.quote }}"
+      </blockquote>
     </div>
   </div>
 </section>
 
 <footer class="footer">
-  <div class="container">
-    <p>&copy; 2025 CosmoPolish. All rights reserved.</p>
+  <div class="container footer-content">
+    <p>&copy; 2026 CosmoPolish</p>
+    <button class="footer-admin-link" type="button" (click)="toggleAdminPanel()">
+      {{ isLoggedIn() ? 'Otwórz panel admina' : 'Zaloguj się jako admin' }}
+    </button>
   </div>
 </footer>
