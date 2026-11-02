@@ -61,7 +61,7 @@
         <button class="mobile-admin-link" type="button" (click)="switchLanguage('en')">🌐 EN</button>
         <button class="mobile-admin-link" type="button" (click)="switchLanguage('pl')">🌐 PL</button>
       </li>
-      <li><button class="mobile-admin-link" type="button" (click)="toggleAdminPanel()">{{ ui().adminPanel }}</button></li>
+      <li><button class="mobile-admin-link" type="button" (click)="toggleAdminPanel()">{{ isLoggedIn() ? ui().adminPanel : ui().adminLogin }}</button></li>
     </ul>
   </div>
 </nav>
@@ -83,22 +83,23 @@
     <form class="login-form" (ngSubmit)="login()">
       <label>
         <span>Login</span>
-        <input type="text" name="username" [(ngModel)]="loginForm.username" />
+        <input type="text" name="username" autocomplete="username" [(ngModel)]="loginForm.username" />
       </label>
 
       <label>
         <span>{{ ui().password }}</span>
-        <input type="password" name="password" [(ngModel)]="loginForm.password" />
+        <input type="password" name="password" autocomplete="current-password" [(ngModel)]="loginForm.password" />
       </label>
 
       <p class="error-message" *ngIf="loginError">{{ loginError }}</p>
 
-      <button class="panel-submit" type="submit">{{ ui().adminLogin }}</button>
+      <button class="panel-submit" type="submit" [disabled]="isBusy">{{ ui().adminLogin }}</button>
     </form>
   </ng-container>
 
   <ng-template #adminEditor>
     <div class="admin-meta">
+      <span>{{ ui().loggedInAs }}: {{ username() }}</span>
       <span>{{ ui().currentEditor }}: {{ activeLanguage().toUpperCase() }}</span>
       <span>{{ workPreviewCount() }} {{ ui().workItems }}</span>
       <span>{{ awardPreviewCount() }} {{ ui().awardItems }}</span>
@@ -169,9 +170,10 @@
             <span class="media-editor__title">{{ ui().image }}</span>
             <label class="file-upload">
               <span>{{ ui().imageUpload }}</span>
-              <input [name]="'workImage' + index" type="file" accept="image/*" (change)="onWorkImageSelected($event, index)" />
+              <input [name]="'workImage' + index" type="file" accept="image/jpeg,image/png,image/gif,image/webp" [disabled]="uploadingIndex !== null" (change)="onWorkImageSelected($event, index)" />
             </label>
-            <p class="media-editor__status" *ngIf="item.imageUrl">{{ ui().imageSelected }}</p>
+            <p class="media-editor__status" *ngIf="uploadingIndex === index">{{ ui().uploading }}</p>
+            <p class="media-editor__status" *ngIf="item.imageUrl && uploadingIndex !== index">{{ ui().imageSelected }}</p>
           </div>
           <div class="editor-media-preview" *ngIf="item.imageUrl">
             <img [src]="item.imageUrl" [alt]="item.title || ui().image" />
@@ -246,9 +248,63 @@
       </section>
     </div>
 
+    <div class="admin-sections history-sections">
+      <section class="editor-card">
+        <div class="repeater__header">
+          <h3>{{ ui().versionsTitle }} ({{ activeLanguage().toUpperCase() }})</h3>
+          <button class="ghost-button" type="button" (click)="refreshHistory()">{{ ui().refresh }}</button>
+        </div>
+        <p class="history-hint">{{ ui().versionsHint }}</p>
+        <p class="error-message" *ngIf="versionsError">{{ versionsError }}</p>
+        <p class="history-empty" *ngIf="!versionsError && !versionsForActiveLanguage().length">{{ ui().noVersions }}</p>
+
+        <ul class="history-list" *ngIf="versionsForActiveLanguage().length">
+          <li class="history-item" *ngFor="let version of versionsForActiveLanguage(); let first = first">
+            <div class="history-item__main">
+              <strong>{{ version.savedAt | date: 'yyyy-MM-dd HH:mm:ss' }}</strong>
+              <span>{{ version.savedBy }} · {{ version.ip || '-' }}</span>
+              <span class="history-tag" *ngIf="version.action === 'restore'">{{ ui().restoredFrom }}</span>
+              <span class="history-tag history-tag--current" *ngIf="first">{{ ui().current }}</span>
+            </div>
+            <button
+              class="ghost-button"
+              type="button"
+              *ngIf="!first"
+              [disabled]="isBusy"
+              (click)="restoreVersion(version)">
+              {{ ui().restore }}
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="editor-card">
+        <div class="repeater__header">
+          <h3>{{ ui().auditTitle }}</h3>
+          <button class="ghost-button" type="button" (click)="refreshHistory()">{{ ui().refresh }}</button>
+        </div>
+        <p class="history-hint">{{ ui().auditHint }}</p>
+        <p class="error-message" *ngIf="auditError">{{ auditError }}</p>
+        <p class="history-empty" *ngIf="!auditError && !auditEvents.length">{{ ui().noEvents }}</p>
+
+        <ul class="history-list" *ngIf="auditEvents.length">
+          <li class="history-item" *ngFor="let event of auditEvents" [class.history-item--warning]="isWarningEvent(event)">
+            <div class="history-item__main">
+              <strong>{{ eventLabel(event) }}</strong>
+              <span>{{ event.at | date: 'yyyy-MM-dd HH:mm:ss' }}</span>
+              <span>{{ event.username || '-' }} · {{ event.ip || '-' }}</span>
+              <span class="history-details" *ngIf="eventDetails(event)">{{ eventDetails(event) }}</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <p class="admin-status" *ngIf="statusMessage" [class.error-message]="statusIsError" role="status">{{ statusMessage }}</p>
+
     <div class="admin-actions">
-      <button class="panel-submit" type="button" (click)="saveContent()">{{ ui().saveChanges }}</button>
-      <button class="ghost-button panel-button" type="button" (click)="resetContent()">{{ ui().resetDefault }}</button>
+      <button class="panel-submit" type="button" [disabled]="isBusy || uploadingIndex !== null" (click)="saveContent()">{{ ui().saveChanges }}</button>
+      <button class="ghost-button panel-button" type="button" [disabled]="isBusy" (click)="resetContent()">{{ ui().resetDefault }}</button>
       <button class="logout-button" type="button" (click)="logout()">{{ ui().logout }}</button>
     </div>
   </ng-template>

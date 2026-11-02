@@ -1,61 +1,95 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { DEFAULT_SITE_CONTENT, LanguageCode, LocalizedSiteContent, SiteContent } from '../models/site-content';
 
-const CONTENT_STORAGE_KEY = 'cosmopolish-site-content';
+interface ContentResponse {
+  languages: Partial<Record<LanguageCode, Partial<SiteContent>>>;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
 
+export interface ContentVersion {
+  id: string;
+  language: LanguageCode;
+  savedAt: string;
+  savedBy: string;
+  ip: string | null;
+  action: 'save' | 'restore';
+  restoredFrom?: string;
+}
+
+/**
+ * Site content comes from cosmopolish-api. Until it loads (or if the API is unreachable)
+ * the built-in defaults are shown. Sections missing in stored content - e.g. ones added
+ * to SiteContent later - are filled in from DEFAULT_SITE_CONTENT.
+ */
 @Injectable({ providedIn: 'root' })
 export class ContentService {
-  readonly content = signal<LocalizedSiteContent>(this.readContent());
+  private readonly http = inject(HttpClient);
 
-  save(language: LanguageCode, content: SiteContent): void {
-    const snapshot = this.cloneLocalized(this.content());
-    snapshot[language] = this.clone(content);
-    localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(snapshot));
-    this.content.set(snapshot);
+  readonly content = signal<LocalizedSiteContent>(this.cloneLocalized(DEFAULT_SITE_CONTENT));
+  readonly loaded = signal(false);
+
+  async load(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.http.get<ContentResponse>(`${environment.apiUrl}/content`));
+      this.content.set(this.mergeWithDefaults(response.languages));
+    } catch (error) {
+      console.error('Could not load site content, using defaults.', error);
+    } finally {
+      this.loaded.set(true);
+    }
   }
 
-  reset(language: LanguageCode): SiteContent {
-    const snapshot = this.cloneLocalized(this.content());
-    snapshot[language] = this.clone(DEFAULT_SITE_CONTENT[language]);
-    localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(snapshot));
-    this.content.set(snapshot);
-    return this.clone(snapshot[language]);
+  async save(language: LanguageCode, content: SiteContent): Promise<void> {
+    const response = await firstValueFrom(
+      this.http.put<ContentResponse>(`${environment.apiUrl}/content/${language}`, content)
+    );
+    this.content.set(this.mergeWithDefaults(response.languages));
+  }
+
+  async reset(language: LanguageCode): Promise<SiteContent> {
+    await this.save(language, DEFAULT_SITE_CONTENT[language]);
+    return this.createEditableCopy(language);
+  }
+
+  /** Saved versions of all languages, newest first. */
+  async listVersions(): Promise<ContentVersion[]> {
+    const response = await firstValueFrom(
+      this.http.get<{ versions: ContentVersion[] }>(`${environment.apiUrl}/content/versions`)
+    );
+    return response.versions;
+  }
+
+  /** Makes the given version the current content of its language (recorded as a new version). */
+  async restoreVersion(id: string): Promise<void> {
+    const response = await firstValueFrom(
+      this.http.post<ContentResponse>(`${environment.apiUrl}/content/versions/${encodeURIComponent(id)}/restore`, {})
+    );
+    this.content.set(this.mergeWithDefaults(response.languages));
+  }
+
+  /** Uploads an image and returns its public URL (e.g. `/uploads/123-abc.jpg`). */
+  async uploadImage(file: File): Promise<string> {
+    const form = new FormData();
+    form.append('image', file);
+    const response = await firstValueFrom(
+      this.http.post<{ url: string }>(`${environment.apiUrl}/uploads/images`, form)
+    );
+    return response.url;
   }
 
   createEditableCopy(language: LanguageCode): SiteContent {
     return this.clone(this.content()[language]);
   }
 
-  private readContent(): LocalizedSiteContent {
-    const raw = localStorage.getItem(CONTENT_STORAGE_KEY);
-    if (!raw) {
-      return this.cloneLocalized(DEFAULT_SITE_CONTENT);
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as Partial<LocalizedSiteContent | SiteContent>;
-
-      if ('hero' in parsed) {
-        return {
-          en: this.clone(parsed as SiteContent),
-          pl: this.clone(DEFAULT_SITE_CONTENT.pl)
-        };
-      }
-
-      const localized = parsed as Partial<LocalizedSiteContent>;
-      return {
-        en: {
-          ...this.clone(DEFAULT_SITE_CONTENT.en),
-          ...localized.en
-        },
-        pl: {
-          ...this.clone(DEFAULT_SITE_CONTENT.pl),
-          ...localized.pl
-        }
-      };
-    } catch {
-      return this.cloneLocalized(DEFAULT_SITE_CONTENT);
-    }
+  private mergeWithDefaults(languages: ContentResponse['languages']): LocalizedSiteContent {
+    return {
+      en: { ...this.clone(DEFAULT_SITE_CONTENT.en), ...languages?.en },
+      pl: { ...this.clone(DEFAULT_SITE_CONTENT.pl), ...languages?.pl }
+    };
   }
 
   private clone(content: SiteContent): SiteContent {

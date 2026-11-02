@@ -5,11 +5,13 @@ on:
     branches: ["dev_server"]
     paths:
       - "cosmopolish-app/**"
+      - "cosmopolish-api/**"
       - ".github/workflows/deploy.yml"
   pull_request:
     branches: ["dev_server"]
     paths:
       - "cosmopolish-app/**"
+      - "cosmopolish-api/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -19,10 +21,45 @@ concurrency:
 
 env:
   APP_DIR: cosmopolish-app
+  API_DIR: cosmopolish-api
   BUILD_DIR: cosmopolish-app/dist/cosmopolish-app/browser
   SSH_PORT: 2222
 
 jobs:
+  api-ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: cosmopolish-api/package-lock.json
+
+      - name: Install deps
+        working-directory: ${{ env.API_DIR }}
+        run: npm ci
+
+      - name: Test API
+        working-directory: ${{ env.API_DIR }}
+        run: npm test
+
+      - name: Prepare API archive
+        run: tar -czf api-dist.tgz -C "$API_DIR" package.json package-lock.json ecosystem.config.cjs .env.example src scripts
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dist
+          path: api-dist.tgz
+          if-no-files-found: error
+
   ci:
     runs-on: ubuntu-latest
     permissions:
@@ -43,28 +80,6 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: npm ci
 
-      - name: Create .env
-        working-directory: ${{ env.APP_DIR }}
-        env:
-          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          ADMIN_USERNAME_2: ${{ secrets.ADMIN_USERNAME_2 }}
-          ADMIN_PASSWORD_2: ${{ secrets.ADMIN_PASSWORD_2 }}
-        run: |
-          if [ -z "$ADMIN_USERNAME" ] || [ -z "$ADMIN_PASSWORD" ]; then
-            echo "Missing ADMIN_USERNAME or ADMIN_PASSWORD secret"
-            exit 1
-          fi
-
-          {
-            printf 'ADMIN_USERNAME=%s\n' "$ADMIN_USERNAME"
-            printf 'ADMIN_PASSWORD=%s\n' "$ADMIN_PASSWORD"
-            if [ -n "$ADMIN_USERNAME_2" ] && [ -n "$ADMIN_PASSWORD_2" ]; then
-              printf 'ADMIN_USERNAME_2=%s\n' "$ADMIN_USERNAME_2"
-              printf 'ADMIN_PASSWORD_2=%s\n' "$ADMIN_PASSWORD_2"
-            fi
-          } > .env
-
       - name: Build Angular (prod)
         working-directory: ${{ env.APP_DIR }}
         run: npm run build -- --configuration production
@@ -76,8 +91,163 @@ jobs:
           path: ${{ env.BUILD_DIR }}
           if-no-files-found: error
 
+  deploy-api:
+    needs: [api-ci, ci]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download API artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-dist
+
+      - name: Upload API archive to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || env.SSH_PORT }}
+          source: api-dist.tgz
+          target: /tmp
+
+      # Admin accounts to create on first deploy. Passed base64-encoded so special characters
+      # in passwords survive the SSH environment; existing accounts are never overwritten.
+      - name: Prepare admin seed
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_USERNAME_2: ${{ secrets.ADMIN_USERNAME_2 }}
+          ADMIN_PASSWORD_2: ${{ secrets.ADMIN_PASSWORD_2 }}
+        run: |
+          SEED=$(node -e '
+            const e = process.env;
+            const accounts = [[e.ADMIN_USERNAME, e.ADMIN_PASSWORD], [e.ADMIN_USERNAME_2, e.ADMIN_PASSWORD_2]]
+              .filter(([u, p]) => u && p)
+              .map(([u, p]) => ({ u, p }));
+            console.log(accounts.length ? Buffer.from(JSON.stringify(accounts)).toString("base64") : "");
+          ')
+          if [ -n "$SEED" ]; then
+            echo "::add-mask::$SEED"
+          fi
+          echo "ADMIN_SEED_B64=$SEED" >> "$GITHUB_ENV"
+
+      # SMTP settings for "login from a new IP" e-mail alerts, written into the server .env.
+      # Empty secrets are skipped, so values set manually on the server are kept.
+      - name: Prepare SMTP settings
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          APPLY=$(node -e '
+            const keys = ["SMTP_HOST", "SMTP_PORT", "SMTP_SECURE", "SMTP_USER", "SMTP_PASS", "MAIL_FROM", "ALERT_EMAIL_TO", "SITE_URL"];
+            const values = Object.fromEntries(keys.filter((k) => process.env[k]).map((k) => [k, process.env[k]]));
+            console.log(Object.keys(values).length ? Buffer.from(JSON.stringify(values)).toString("base64") : "");
+          ')
+          if [ -n "$APPLY" ]; then
+            echo "::add-mask::$APPLY"
+          else
+            echo "::warning::SMTP secrets not set - login alert e-mails stay disabled (see README)."
+          fi
+          echo "APPLY_ENV_B64=$APPLY" >> "$GITHUB_ENV"
+
+      # Idempotent server setup + deploy. data/, uploads/ and .env in API_DIR live only on the server
+      # and are never overwritten.
+      - name: Install and restart API on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || env.SSH_PORT }}
+          envs: ADMIN_SEED_B64,APPLY_ENV_B64
+          script: |
+            set -e
+            echo "Deploying as $(whoami)"
+
+            # Non-interactive SSH shells skip .bashrc: load nvm if node is not on PATH,
+            # and include ~/.local/bin where pm2 is installed when global npm needs sudo.
+            export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
+            if ! command -v node >/dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then
+              . "$HOME/.nvm/nvm.sh"
+            fi
+
+            NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]')
+            if [ "$NODE_MAJOR" -lt 20 ]; then
+              echo "Node.js 20.12+ required, found $(node -v)"
+              exit 1
+            fi
+            echo "Node $(node -v) at $(command -v node)"
+            # Global npm binaries (e.g. ~/.npm-global/bin) are usually added to PATH only in .bashrc.
+            export PATH="$(npm config get prefix)/bin:$PATH"
+
+            if command -v pm2 >/dev/null 2>&1; then
+              echo "Using existing pm2 at $(command -v pm2)"
+            elif [ -w "$(npm config get prefix)/lib/node_modules" ]; then
+              echo "Installing pm2 globally..."
+              npm install -g pm2
+            else
+              echo "Global npm needs sudo - installing pm2 into ~/.local"
+              npm install -g --prefix "$HOME/.local" pm2
+            fi
+
+            API_DIR="${{ secrets.SSH_API_DIR }}"
+            if [ -z "$API_DIR" ]; then
+              if [ "$(id -u)" = "0" ]; then API_DIR=/opt/cosmopolish-api; else API_DIR="$HOME/cosmopolish-api"; fi
+            fi
+            echo "API directory: $API_DIR"
+
+            mkdir -p "$API_DIR"
+            rm -rf "$API_DIR/src" "$API_DIR/scripts"
+            tar -xzf /tmp/api-dist.tgz -C "$API_DIR"
+            rm -f /tmp/api-dist.tgz
+            cd "$API_DIR"
+
+            if [ ! -f .env ]; then
+              echo "Creating .env with a new JWT_SECRET"
+              JWT_SECRET=$(node -e 'console.log(require("crypto").randomBytes(48).toString("base64url"))')
+              sed "s|^JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" .env.example > .env
+              chmod 600 .env
+            fi
+
+            npm ci --omit=dev
+            ADMIN_SEED_B64="$ADMIN_SEED_B64" node scripts/seed-admins.js
+            APPLY_ENV_B64="$APPLY_ENV_B64" node scripts/apply-env.js
+
+            pm2 startOrReload ecosystem.config.cjs --update-env
+            pm2 save
+            if ! systemctl is-enabled "pm2-$(whoami)" >/dev/null 2>&1; then
+              if [ "$(id -u)" = "0" ]; then
+                pm2 startup systemd -u root --hp /root
+              else
+                echo "::warning::pm2 autostart is not enabled - after a server reboot the API will not start. Run once on the server: sudo env PATH=\"$PATH\" $(command -v pm2) startup systemd -u $(whoami) --hp $HOME"
+              fi
+            fi
+
+            PORT=$(grep -E '^PORT=' .env | cut -d= -f2)
+            PORT="${PORT:-3001}"
+            for i in $(seq 1 15); do
+              if node -e "fetch('http://127.0.0.1:$PORT/api/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"; then
+                echo "API healthy on 127.0.0.1:$PORT"
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "API did not become healthy - last logs:"
+            pm2 logs cosmopolish-api --lines 40 --nostream
+            exit 1
+
   deploy:
-    needs: ci
+    needs: [ci, deploy-api]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -126,3 +296,15 @@ jobs:
             find "$TARGET_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
             cp -a "$RELEASE_DIR"/. "$TARGET_DIR"/
             rm -rf "$RELEASE_DIR"
+
+      # Does not fail the deploy - only warns when nginx does not forward /api to the backend yet.
+      - name: Check public API through nginx
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://cosmopolish.mathe.pl' }}
+        run: |
+          BODY=$(curl -s --max-time 15 "$SITE_URL/api/health" || true)
+          if echo "$BODY" | grep -q '"status":"ok"'; then
+            echo "Public API OK: $SITE_URL/api/health"
+          else
+            echo "::warning::$SITE_URL/api/health does not reach the backend. Add the /api/ and /uploads/ proxy locations to the nginx config (see README)."
+          fi

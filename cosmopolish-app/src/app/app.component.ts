@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AwardItem, ContentBlock, LanguageCode, SiteContent } from './models/site-content';
+import { AuditEvent, AuditService } from './services/audit.service';
 import { AuthService } from './services/auth.service';
-import { ContentService } from './services/content.service';
+import { ContentService, ContentVersion } from './services/content.service';
 
 const LANGUAGE_STORAGE_KEY = 'cosmopolish-language';
 
@@ -54,6 +56,29 @@ interface UiText {
   imageSelected: string;
   videoLink: string;
   openVideo: string;
+  apiError: string;
+  saving: string;
+  saved: string;
+  saveError: string;
+  sessionExpired: string;
+  uploading: string;
+  uploadError: string;
+  loggedInAs: string;
+  versionsTitle: string;
+  versionsHint: string;
+  auditTitle: string;
+  auditHint: string;
+  refresh: string;
+  restore: string;
+  restoreConfirm: string;
+  restored: string;
+  restoredFrom: string;
+  current: string;
+  noVersions: string;
+  noEvents: string;
+  loadError: string;
+  newIp: string;
+  events: Record<string, string>;
 }
 
 const UI_TEXT: Record<LanguageCode, UiText> = {
@@ -103,7 +128,39 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     imageRemove: 'Remove image',
     imageSelected: 'Image selected',
     videoLink: 'Video link',
-    openVideo: 'Open video'
+    openVideo: 'Open video',
+    apiError: 'Server is unavailable. Try again later.',
+    saving: 'Saving…',
+    saved: 'Changes saved.',
+    saveError: 'Could not save changes.',
+    sessionExpired: 'Your session has expired. Log in again.',
+    uploading: 'Uploading image…',
+    uploadError: 'Could not upload the image (JPG, PNG, GIF or WebP, max 8 MB).',
+    loggedInAs: 'Logged in as',
+    versionsTitle: 'Version history',
+    versionsHint: 'Every save of the edited language. Restoring creates a new version, nothing is lost.',
+    auditTitle: 'Activity log',
+    auditHint: 'Logins, saves, restores and uploads with the IP address they came from.',
+    refresh: 'Refresh',
+    restore: 'Restore',
+    restoreConfirm: 'Restore the version from {date} ({user})? Unsaved changes in the editor will be lost.',
+    restored: 'Version restored.',
+    restoredFrom: 'restored',
+    current: 'current',
+    noVersions: 'No saved versions yet.',
+    noEvents: 'No events yet.',
+    loadError: 'Could not load data.',
+    newIp: 'new IP',
+    events: {
+      'login.success': 'Login',
+      'login.failed': 'Failed login',
+      'login.blocked': 'Login blocked (too many attempts)',
+      'content.save': 'Content saved',
+      'content.restore': 'Version restored',
+      'upload.image': 'Image uploaded',
+      'alert.sent': 'Alert e-mail sent',
+      'alert.failed': 'Alert e-mail failed'
+    }
   },
   pl: {
     home: 'Start',
@@ -151,7 +208,39 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     imageRemove: 'Usuń zdjęcie',
     imageSelected: 'Zdjęcie wybrane',
     videoLink: 'Link do wideo',
-    openVideo: 'Otwórz wideo'
+    openVideo: 'Otwórz wideo',
+    apiError: 'Serwer jest niedostępny. Spróbuj ponownie później.',
+    saving: 'Zapisywanie…',
+    saved: 'Zmiany zapisane.',
+    saveError: 'Nie udało się zapisać zmian.',
+    sessionExpired: 'Sesja wygasła. Zaloguj się ponownie.',
+    uploading: 'Wysyłanie zdjęcia…',
+    uploadError: 'Nie udało się wysłać zdjęcia (JPG, PNG, GIF lub WebP, maks. 8 MB).',
+    loggedInAs: 'Zalogowano jako',
+    versionsTitle: 'Historia wersji',
+    versionsHint: 'Każdy zapis edytowanego języka. Przywrócenie tworzy nową wersję, nic nie ginie.',
+    auditTitle: 'Dziennik zdarzeń',
+    auditHint: 'Logowania, zapisy, przywrócenia i uploady wraz z adresem IP, z którego przyszły.',
+    refresh: 'Odśwież',
+    restore: 'Przywróć',
+    restoreConfirm: 'Przywrócić wersję z {date} ({user})? Niezapisane zmiany w edytorze zostaną utracone.',
+    restored: 'Wersja przywrócona.',
+    restoredFrom: 'przywrócenie',
+    current: 'aktualna',
+    noVersions: 'Brak zapisanych wersji.',
+    noEvents: 'Brak zdarzeń.',
+    loadError: 'Nie udało się wczytać danych.',
+    newIp: 'nowe IP',
+    events: {
+      'login.success': 'Logowanie',
+      'login.failed': 'Nieudane logowanie',
+      'login.blocked': 'Logowanie zablokowane (za dużo prób)',
+      'content.save': 'Zapis treści',
+      'content.restore': 'Przywrócenie wersji',
+      'upload.image': 'Wgranie zdjęcia',
+      'alert.sent': 'Wysłano e-mail z alertem',
+      'alert.failed': 'Błąd wysyłki e-maila z alertem'
+    }
   }
 };
 
@@ -166,12 +255,21 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly title = 'cosmopolish-app';
   private readonly authService = inject(AuthService);
   private readonly contentService = inject(ContentService);
+  private readonly auditService = inject(AuditService);
 
   isScrolled = false;
   activeSection = 'home';
   isMenuOpen = false;
   isAdminPanelOpen = false;
   loginError = '';
+  isBusy = false;
+  statusMessage = '';
+  statusIsError = false;
+  uploadingIndex: number | null = null;
+  versions: ContentVersion[] = [];
+  versionsError = '';
+  auditEvents: AuditEvent[] = [];
+  auditError = '';
   loginForm = {
     username: '',
     password: ''
@@ -182,6 +280,7 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly localizedContent = this.contentService.content;
   readonly content = computed(() => this.localizedContent()[this.activeLanguage()]);
   readonly isLoggedIn = this.authService.isLoggedIn;
+  readonly username = this.authService.username;
   readonly workPreviewCount = computed(() => this.content().work.items.length);
   readonly awardPreviewCount = computed(() => this.content().awards.items.length);
   readonly ui = computed(() => UI_TEXT[this.activeLanguage()]);
@@ -193,6 +292,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.contentService.load().then(() => {
+      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+      setTimeout(() => this.observeElements(), 50);
+    });
     this.observeElements();
     this.updateActiveSection();
     window.addEventListener('keydown', this.onKeydown);
@@ -263,10 +366,14 @@ export class AppComponent implements OnInit, OnDestroy {
   toggleAdminPanel() {
     this.isAdminPanelOpen = !this.isAdminPanelOpen;
     this.loginError = '';
+    this.clearStatus();
 
     if (this.isAdminPanelOpen) {
       this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
       this.closeMenu();
+      if (this.isLoggedIn()) {
+        this.refreshHistory();
+      }
     }
 
     this.lockBodyScroll(this.isMenuOpen || this.isAdminPanelOpen);
@@ -289,38 +396,107 @@ export class AppComponent implements OnInit, OnDestroy {
     this.activeLanguage.set(language);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     this.loginError = '';
+    this.clearStatus();
     this.editableContent = this.contentService.createEditableCopy(language);
     setTimeout(() => this.observeElements(), 50);
   }
 
-  login() {
-    this.loginError = '';
-    const success = this.authService.login(this.loginForm.username.trim(), this.loginForm.password);
-
-    if (!success) {
-      this.loginError = this.ui().loginError;
+  async login() {
+    if (this.isBusy) {
       return;
     }
 
-    this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
-    this.loginForm.password = '';
+    this.loginError = '';
+    this.isBusy = true;
+
+    try {
+      const success = await this.authService.login(this.loginForm.username.trim(), this.loginForm.password);
+      if (!success) {
+        this.loginError = this.ui().loginError;
+        return;
+      }
+
+      this.clearStatus();
+      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+      this.loginForm.password = '';
+      this.refreshHistory();
+    } catch (error) {
+      this.loginError = (error as HttpErrorResponse).status === 429 ? this.apiMessage(error) : this.ui().apiError;
+    } finally {
+      this.isBusy = false;
+    }
   }
 
   logout() {
     this.authService.logout();
     this.loginForm = { username: '', password: '' };
     this.loginError = '';
+    this.clearStatus();
+    this.versions = [];
+    this.auditEvents = [];
   }
 
-  saveContent() {
-    this.contentService.save(this.activeLanguage(), this.editableContent);
-    this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
-    setTimeout(() => this.observeElements(), 50);
+  async saveContent() {
+    await this.runAdminAction(async () => {
+      await this.contentService.save(this.activeLanguage(), this.editableContent);
+      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+    });
   }
 
-  resetContent() {
-    this.editableContent = this.contentService.reset(this.activeLanguage());
-    setTimeout(() => this.observeElements(), 50);
+  async resetContent() {
+    await this.runAdminAction(async () => {
+      this.editableContent = await this.contentService.reset(this.activeLanguage());
+    });
+  }
+
+  versionsForActiveLanguage(): ContentVersion[] {
+    return this.versions.filter((version) => version.language === this.activeLanguage());
+  }
+
+  async refreshHistory() {
+    const [versions, events] = await Promise.allSettled([
+      this.contentService.listVersions(),
+      this.auditService.list(100)
+    ]);
+
+    this.versions = versions.status === 'fulfilled' ? versions.value : [];
+    this.versionsError = versions.status === 'fulfilled' ? '' : this.ui().loadError;
+    this.auditEvents = events.status === 'fulfilled' ? events.value : [];
+    this.auditError = events.status === 'fulfilled' ? '' : this.ui().loadError;
+  }
+
+  async restoreVersion(version: ContentVersion) {
+    const date = new Date(version.savedAt).toLocaleString();
+    if (!window.confirm(this.ui().restoreConfirm.replace('{date}', date).replace('{user}', version.savedBy))) {
+      return;
+    }
+
+    await this.runAdminAction(async () => {
+      await this.contentService.restoreVersion(version.id);
+      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+    }, this.ui().restored);
+  }
+
+  eventLabel(event: AuditEvent): string {
+    return this.ui().events[event.event] ?? event.event;
+  }
+
+  /** Short human-readable details of an audit event, e.g. language, attempted username or file. */
+  eventDetails(event: AuditEvent): string {
+    const details = event.details ?? {};
+    const parts = [
+      details['language'] ? String(details['language']).toUpperCase() : '',
+      details['attemptedUsername'] ? `"${details['attemptedUsername']}"` : '',
+      details['originalName'] ? String(details['originalName']) : '',
+      details['newIp'] ? this.ui().newIp : '',
+      details['error'] ? String(details['error']) : ''
+    ];
+    return parts.filter(Boolean).join(' · ');
+  }
+
+  /** Events worth a second look: failed or blocked logins, failed alerts, logins from a new IP. */
+  isWarningEvent(event: AuditEvent): boolean {
+    return ['login.failed', 'login.blocked', 'alert.failed'].includes(event.event) || event.details?.['newIp'] === true;
   }
 
   addAboutParagraph() {
@@ -339,21 +515,27 @@ export class AppComponent implements OnInit, OnDestroy {
     this.editableContent.work.items.splice(index, 1);
   }
 
-  onWorkImageSelected(event: Event, index: number) {
+  async onWorkImageSelected(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    input.value = '';
 
     if (!file) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : '';
-      this.editableContent.work.items[index].imageUrl = result;
-    };
-    reader.readAsDataURL(file);
-    input.value = '';
+    const item = this.editableContent.work.items[index];
+    this.uploadingIndex = index;
+    this.setStatus(this.ui().uploading, false);
+
+    try {
+      item.imageUrl = await this.contentService.uploadImage(file);
+      this.clearStatus();
+    } catch (error) {
+      this.setStatus(this.isUnauthorized(error) ? this.ui().sessionExpired : this.ui().uploadError, true);
+    } finally {
+      this.uploadingIndex = null;
+    }
   }
 
   removeWorkImage(index: number) {
@@ -394,6 +576,48 @@ export class AppComponent implements OnInit, OnDestroy {
       this.closeMenu();
     }
   };
+
+  private async runAdminAction(action: () => Promise<void>, successMessage = this.ui().saved) {
+    if (this.isBusy) {
+      return;
+    }
+
+    this.isBusy = true;
+    this.setStatus(this.ui().saving, false);
+
+    try {
+      await action();
+      this.setStatus(successMessage, false);
+      setTimeout(() => this.observeElements(), 50);
+      this.refreshHistory();
+    } catch (error) {
+      if (this.isUnauthorized(error)) {
+        this.loginError = this.ui().sessionExpired;
+        this.clearStatus();
+      } else {
+        this.setStatus(`${this.ui().saveError} ${this.apiMessage(error)}`.trim(), true);
+      }
+    } finally {
+      this.isBusy = false;
+    }
+  }
+
+  private isUnauthorized(error: unknown): boolean {
+    return error instanceof HttpErrorResponse && error.status === 401;
+  }
+
+  private apiMessage(error: unknown): string {
+    return error instanceof HttpErrorResponse && typeof error.error?.error === 'string' ? error.error.error : '';
+  }
+
+  private setStatus(message: string, isError: boolean) {
+    this.statusMessage = message;
+    this.statusIsError = isError;
+  }
+
+  private clearStatus() {
+    this.setStatus('', false);
+  }
 
   private lockBodyScroll(lock: boolean) {
     document.body.style.overflow = lock ? 'hidden' : '';

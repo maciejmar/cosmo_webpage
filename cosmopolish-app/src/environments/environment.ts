@@ -1,7 +1,5 @@
 export const environment = {
   production: true,
-  adminUsername: "cosmo-admin",
-  adminPassword: "1@aA2#$bB-c1o2s3m4o5",
-  adminUsername2: "myadmin",
-  adminPassword2: "c1o2s3m4o5"
+  // Served from the same domain; nginx (prod) and proxy.conf.json (ng serve) forward it to cosmopolish-api.
+  apiUrl: '/api'
 };
