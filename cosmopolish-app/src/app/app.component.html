@@ -4,10 +4,10 @@
 
     <ul class="nav-links desktop-only">
       <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">{{ ui().home }}</a></li>
-      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
-      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
-      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
-      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">{{ ui().contact }}</a></li>
+      <li *ngIf="isSectionVisible('about')"><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
+      <li *ngIf="isSectionVisible('work')"><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
+      <li *ngIf="isSectionVisible('awards')"><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
+      <li *ngIf="isSectionVisible('contact')"><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">{{ ui().contact }}</a></li>
     </ul>
 
     <div class="nav-tools desktop-only">
@@ -53,10 +53,10 @@
     aria-label="Main menu">
     <ul class="mobile-links" (click)="closeMenu()">
       <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">{{ ui().home }}</a></li>
-      <li><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
-      <li><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
-      <li><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
-      <li><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">{{ ui().contact }}</a></li>
+      <li *ngIf="isSectionVisible('about')"><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
+      <li *ngIf="isSectionVisible('work')"><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
+      <li *ngIf="isSectionVisible('awards')"><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
+      <li *ngIf="isSectionVisible('contact')"><a (click)="scrollToSection('contact')" [class.active]="activeSection === 'contact'">{{ ui().contact }}</a></li>
       <li class="mobile-language-row">
         <button class="mobile-admin-link" type="button" (click)="switchLanguage('en')">🌐 EN</button>
         <button class="mobile-admin-link" type="button" (click)="switchLanguage('pl')">🌐 PL</button>
@@ -105,7 +105,10 @@
       <span>{{ awardPreviewCount() }} {{ ui().awardItems }}</span>
     </div>
 
-    <div class="admin-sections">
+    <p class="draft-notice" *ngIf="draftNotice">{{ draftNotice }}</p>
+
+    <!-- Any edit (typing, checkbox, add/remove/move buttons) schedules the server-side draft autosave. -->
+    <div class="admin-sections" (input)="scheduleDraftSave()" (change)="scheduleDraftSave()" (click)="scheduleDraftSave()">
       <section class="editor-card">
         <h3>{{ ui().hero }}</h3>
         <label>
@@ -128,6 +131,10 @@
 
       <section class="editor-card">
         <h3>{{ ui().about }}</h3>
+        <label class="checkbox-row">
+          <input type="checkbox" name="aboutHidden" [(ngModel)]="editableContent.about.hidden" />
+          <span>{{ ui().hideSection }}</span>
+        </label>
         <label>
           <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="aboutTitle" [(ngModel)]="editableContent.about.title" />
@@ -137,15 +144,38 @@
           <textarea name="aboutLead" [(ngModel)]="editableContent.about.lead" rows="3"></textarea>
         </label>
 
+        <div class="media-editor">
+          <span class="media-editor__title">{{ ui().aboutImage }}</span>
+          <label class="file-upload">
+            <span>{{ ui().imageUpload }}</span>
+            <input name="aboutImage" type="file" accept="image/jpeg,image/png,image/gif,image/webp" [disabled]="uploadingKey !== null" (change)="onImageSelected($event, editableContent.about, 'about')" />
+          </label>
+          <p class="media-editor__status" *ngIf="uploadingKey === 'about'">{{ ui().uploading }}</p>
+        </div>
+        <ng-container *ngIf="editableContent.about.imageUrl">
+          <div class="editor-media-preview">
+            <img [src]="editableContent.about.imageUrl" [alt]="editableContent.about.imageAlt || ui().image" />
+            <button class="remove-button" type="button" (click)="removeImage(editableContent.about)">{{ ui().imageRemove }}</button>
+          </div>
+          <label>
+            <span>{{ ui().imageAlt }}</span>
+            <input type="text" name="aboutImageAlt" [(ngModel)]="editableContent.about.imageAlt" />
+          </label>
+        </ng-container>
+
         <div class="repeater">
           <div class="repeater__header">
             <span>{{ ui().description }}</span>
             <button class="ghost-button" type="button" (click)="addAboutParagraph()">{{ ui().addParagraph }}</button>
           </div>
 
-          <div class="repeater-item" *ngFor="let paragraph of editableContent.about.paragraphs; let index = index; trackBy: trackByIndex">
+          <div class="repeater-item" *ngFor="let paragraph of editableContent.about.paragraphs; let index = index; let first = first; let last = last; trackBy: trackByIndex">
             <textarea [name]="'aboutParagraph' + index" [(ngModel)]="editableContent.about.paragraphs[index]" rows="4"></textarea>
-            <button class="remove-button" type="button" (click)="removeAboutParagraph(index)">{{ ui().remove }}</button>
+            <div class="item-toolbar">
+              <button class="ghost-button small-button" type="button" [disabled]="first" (click)="moveItem(editableContent.about.paragraphs, index, -1)" [attr.aria-label]="ui().moveUp">↑</button>
+              <button class="ghost-button small-button" type="button" [disabled]="last" (click)="moveItem(editableContent.about.paragraphs, index, 1)" [attr.aria-label]="ui().moveDown">↓</button>
+              <button class="remove-button small-button" type="button" (click)="removeAboutParagraph(index)">{{ ui().remove }}</button>
+            </div>
           </div>
         </div>
       </section>
@@ -156,41 +186,90 @@
           <button class="ghost-button" type="button" (click)="addWorkItem()">{{ ui().addMaterial }}</button>
         </div>
 
+        <label class="checkbox-row">
+          <input type="checkbox" name="workHidden" [(ngModel)]="editableContent.work.hidden" />
+          <span>{{ ui().hideSection }}</span>
+        </label>
         <label>
           <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="workTitle" [(ngModel)]="editableContent.work.title" />
         </label>
+        <label>
+          <span>{{ ui().sectionIntro }}</span>
+          <textarea name="workIntro" [(ngModel)]="editableContent.work.intro" rows="2"></textarea>
+        </label>
 
-        <div class="repeater-item" *ngFor="let item of editableContent.work.items; let index = index; trackBy: trackByIndex">
-          <label>
-            <span>{{ ui().icon }}</span>
-            <input [name]="'workIcon' + index" type="text" [(ngModel)]="item.icon" />
-          </label>
-          <div class="media-editor">
-            <span class="media-editor__title">{{ ui().image }}</span>
-            <label class="file-upload">
-              <span>{{ ui().imageUpload }}</span>
-              <input [name]="'workImage' + index" type="file" accept="image/jpeg,image/png,image/gif,image/webp" [disabled]="uploadingIndex !== null" (change)="onWorkImageSelected($event, index)" />
-            </label>
-            <p class="media-editor__status" *ngIf="uploadingIndex === index">{{ ui().uploading }}</p>
-            <p class="media-editor__status" *ngIf="item.imageUrl && uploadingIndex !== index">{{ ui().imageSelected }}</p>
+        <div class="repeater-item" [class.repeater-item--hidden]="item.hidden" *ngFor="let item of editableContent.work.items; let index = index; let first = first; let last = last; trackBy: trackByIndex">
+          <div class="item-toolbar">
+            <strong class="item-toolbar__title">{{ index + 1 }}. {{ item.title }}</strong>
+            <span class="history-tag" *ngIf="item.hidden">{{ ui().hiddenBadge }}</span>
+            <button class="ghost-button small-button" type="button" [disabled]="first" (click)="moveItem(editableContent.work.items, index, -1)" [attr.aria-label]="ui().moveUp">↑</button>
+            <button class="ghost-button small-button" type="button" [disabled]="last" (click)="moveItem(editableContent.work.items, index, 1)" [attr.aria-label]="ui().moveDown">↓</button>
           </div>
-          <div class="editor-media-preview" *ngIf="item.imageUrl">
-            <img [src]="item.imageUrl" [alt]="item.title || ui().image" />
-            <button class="remove-button" type="button" (click)="removeWorkImage(index)">{{ ui().imageRemove }}</button>
-          </div>
-          <label>
-            <span>{{ ui().videoLink }}</span>
-            <input [name]="'workVideo' + index" type="url" [(ngModel)]="item.videoUrl" />
+          <label class="checkbox-row">
+            <input [name]="'workHidden' + index" type="checkbox" [(ngModel)]="item.hidden" />
+            <span>{{ ui().hideItem }}</span>
           </label>
           <label>
             <span>{{ ui().materialTitle }}</span>
             <input [name]="'workTitle' + index" type="text" [(ngModel)]="item.title" />
           </label>
+          <div class="field-row">
+            <label>
+              <span>{{ ui().icon }}</span>
+              <input [name]="'workIcon' + index" type="text" [(ngModel)]="item.icon" />
+            </label>
+            <label>
+              <span>{{ ui().category }}</span>
+              <input [name]="'workCategory' + index" type="text" [(ngModel)]="item.category" />
+            </label>
+            <label>
+              <span>{{ ui().date }}</span>
+              <input [name]="'workDate' + index" type="text" [(ngModel)]="item.date" />
+            </label>
+          </div>
           <label>
             <span>{{ ui().description }}</span>
             <textarea [name]="'workDescription' + index" [(ngModel)]="item.description" rows="4"></textarea>
           </label>
+          <div class="media-editor">
+            <span class="media-editor__title">{{ ui().image }}</span>
+            <label class="file-upload">
+              <span>{{ ui().imageUpload }}</span>
+              <input [name]="'workImage' + index" type="file" accept="image/jpeg,image/png,image/gif,image/webp" [disabled]="uploadingKey !== null" (change)="onImageSelected($event, item, 'work-' + index)" />
+            </label>
+            <p class="media-editor__status" *ngIf="uploadingKey === 'work-' + index">{{ ui().uploading }}</p>
+          </div>
+          <ng-container *ngIf="item.imageUrl">
+            <div class="editor-media-preview">
+              <img [src]="item.imageUrl" [alt]="item.imageAlt || item.title || ui().image" />
+              <button class="remove-button" type="button" (click)="removeImage(item)">{{ ui().imageRemove }}</button>
+            </div>
+            <label>
+              <span>{{ ui().imageAlt }}</span>
+              <input [name]="'workImageAlt' + index" type="text" [(ngModel)]="item.imageAlt" />
+            </label>
+          </ng-container>
+          <div class="field-row">
+            <label>
+              <span>{{ ui().videoLink }}</span>
+              <input [name]="'workVideo' + index" type="url" placeholder="https://" [(ngModel)]="item.videoUrl" />
+            </label>
+            <label>
+              <span>{{ ui().videoLabel }}</span>
+              <input [name]="'workVideoLabel' + index" type="text" [placeholder]="ui().openVideo" [(ngModel)]="item.videoLabel" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>
+              <span>{{ ui().linkUrl }}</span>
+              <input [name]="'workLink' + index" type="url" placeholder="https://" [(ngModel)]="item.linkUrl" />
+            </label>
+            <label>
+              <span>{{ ui().linkLabel }}</span>
+              <input [name]="'workLinkLabel' + index" type="text" [placeholder]="ui().readMore" [(ngModel)]="item.linkLabel" />
+            </label>
+          </div>
           <button class="remove-button" type="button" (click)="removeWorkItem(index)">{{ ui().remove }}</button>
         </div>
       </section>
@@ -201,12 +280,30 @@
           <button class="ghost-button" type="button" (click)="addAwardItem()">{{ ui().addEntry }}</button>
         </div>
 
+        <label class="checkbox-row">
+          <input type="checkbox" name="awardsHidden" [(ngModel)]="editableContent.awards.hidden" />
+          <span>{{ ui().hideSection }}</span>
+        </label>
         <label>
           <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="awardsTitle" [(ngModel)]="editableContent.awards.title" />
         </label>
+        <label>
+          <span>{{ ui().sectionIntro }}</span>
+          <textarea name="awardsIntro" [(ngModel)]="editableContent.awards.intro" rows="2"></textarea>
+        </label>
 
-        <div class="repeater-item" *ngFor="let item of editableContent.awards.items; let index = index; trackBy: trackByIndex">
+        <div class="repeater-item" [class.repeater-item--hidden]="item.hidden" *ngFor="let item of editableContent.awards.items; let index = index; let first = first; let last = last; trackBy: trackByIndex">
+          <div class="item-toolbar">
+            <strong class="item-toolbar__title">{{ item.year }} · {{ item.title }}</strong>
+            <span class="history-tag" *ngIf="item.hidden">{{ ui().hiddenBadge }}</span>
+            <button class="ghost-button small-button" type="button" [disabled]="first" (click)="moveItem(editableContent.awards.items, index, -1)" [attr.aria-label]="ui().moveUp">↑</button>
+            <button class="ghost-button small-button" type="button" [disabled]="last" (click)="moveItem(editableContent.awards.items, index, 1)" [attr.aria-label]="ui().moveDown">↓</button>
+          </div>
+          <label class="checkbox-row">
+            <input [name]="'awardHidden' + index" type="checkbox" [(ngModel)]="item.hidden" />
+            <span>{{ ui().hideItem }}</span>
+          </label>
           <label>
             <span>{{ ui().year }}</span>
             <input [name]="'awardYear' + index" type="text" [(ngModel)]="item.year" />
@@ -219,28 +316,80 @@
             <span>{{ ui().description }}</span>
             <textarea [name]="'awardDescription' + index" [(ngModel)]="item.description" rows="4"></textarea>
           </label>
+          <div class="field-row">
+            <label>
+              <span>{{ ui().linkUrl }}</span>
+              <input [name]="'awardLink' + index" type="url" placeholder="https://" [(ngModel)]="item.linkUrl" />
+            </label>
+            <label>
+              <span>{{ ui().linkLabel }}</span>
+              <input [name]="'awardLinkLabel' + index" type="text" [placeholder]="ui().readMore" [(ngModel)]="item.linkLabel" />
+            </label>
+          </div>
           <button class="remove-button" type="button" (click)="removeAwardItem(index)">{{ ui().remove }}</button>
         </div>
       </section>
 
       <section class="editor-card">
         <h3>{{ ui().contact }}</h3>
+        <label class="checkbox-row">
+          <input type="checkbox" name="contactHidden" [(ngModel)]="editableContent.contact.hidden" />
+          <span>{{ ui().hideSection }}</span>
+        </label>
         <label>
           <span>{{ ui().sectionHeading }}</span>
           <input type="text" name="contactTitle" [(ngModel)]="editableContent.contact.title" />
         </label>
         <label>
-          <span>{{ ui().email }}</span>
-          <input type="email" name="contactEmail" [(ngModel)]="editableContent.contact.email" />
+          <span>{{ ui().sectionIntro }}</span>
+          <textarea name="contactIntro" [(ngModel)]="editableContent.contact.intro" rows="2"></textarea>
         </label>
-        <label>
-          <span>{{ ui().twitterLabel }}</span>
-          <input type="text" name="contactTwitterLabel" [(ngModel)]="editableContent.contact.twitterLabel" />
-        </label>
-        <label>
-          <span>{{ ui().twitterUrl }}</span>
-          <input type="url" name="contactTwitterUrl" [(ngModel)]="editableContent.contact.twitterUrl" />
-        </label>
+        <div class="field-row">
+          <label>
+            <span>{{ ui().email }}</span>
+            <input type="email" name="contactEmail" [(ngModel)]="editableContent.contact.email" />
+          </label>
+          <label>
+            <span>{{ ui().phone }}</span>
+            <input type="tel" name="contactPhone" [(ngModel)]="editableContent.contact.phone" />
+          </label>
+        </div>
+        <div class="field-row">
+          <label>
+            <span>{{ ui().twitterLabel }}</span>
+            <input type="text" name="contactTwitterLabel" [(ngModel)]="editableContent.contact.twitterLabel" />
+          </label>
+          <label>
+            <span>{{ ui().twitterUrl }}</span>
+            <input type="url" name="contactTwitterUrl" [(ngModel)]="editableContent.contact.twitterUrl" />
+          </label>
+        </div>
+
+        <div class="repeater">
+          <div class="repeater__header">
+            <span>{{ ui().otherLinks }}</span>
+            <button class="ghost-button" type="button" (click)="addContactLink()">{{ ui().addLink }}</button>
+          </div>
+
+          <div class="repeater-item" *ngFor="let link of editableContent.contact.links ?? []; let index = index; let first = first; let last = last; trackBy: trackByIndex">
+            <div class="field-row">
+              <label>
+                <span>{{ ui().linkName }}</span>
+                <input [name]="'contactLinkLabel' + index" type="text" [(ngModel)]="link.label" />
+              </label>
+              <label>
+                <span>URL</span>
+                <input [name]="'contactLinkUrl' + index" type="url" placeholder="https://" [(ngModel)]="link.url" />
+              </label>
+            </div>
+            <div class="item-toolbar">
+              <button class="ghost-button small-button" type="button" [disabled]="first" (click)="moveItem(editableContent.contact.links!, index, -1)" [attr.aria-label]="ui().moveUp">↑</button>
+              <button class="ghost-button small-button" type="button" [disabled]="last" (click)="moveItem(editableContent.contact.links!, index, 1)" [attr.aria-label]="ui().moveDown">↓</button>
+              <button class="remove-button small-button" type="button" (click)="removeContactLink(index)">{{ ui().remove }}</button>
+            </div>
+          </div>
+        </div>
+
         <label>
           <span>{{ ui().quote }}</span>
           <textarea name="contactQuote" [(ngModel)]="editableContent.contact.quote" rows="4"></textarea>
@@ -300,17 +449,42 @@
       </section>
     </div>
 
-    <p class="admin-status" *ngIf="statusMessage" [class.error-message]="statusIsError" role="status">{{ statusMessage }}</p>
+    <div class="publish-bar">
+      <p class="publish-bar__state" *ngIf="hasUnsavedChanges()">
+        ● {{ ui().unsavedChanges }} ({{ activeLanguage().toUpperCase() }})
+        <span class="publish-bar__draft" *ngIf="draftStatus()" [class.error-message]="draftState === 'error'">· {{ draftStatus() }}</span>
+      </p>
+      <div class="error-message" *ngIf="invalidUrls().length">
+        {{ ui().invalidUrls }}
+        <ul class="invalid-list">
+          <li *ngFor="let path of invalidUrls()"><code>{{ path }}</code></li>
+        </ul>
+      </div>
+      <p class="admin-status" *ngIf="statusMessage" [class.error-message]="statusIsError" role="status">{{ statusMessage }}</p>
 
-    <div class="admin-actions">
-      <button class="panel-submit" type="button" [disabled]="isBusy || uploadingIndex !== null" (click)="saveContent()">{{ ui().saveChanges }}</button>
-      <button class="ghost-button panel-button" type="button" [disabled]="isBusy" (click)="resetContent()">{{ ui().resetDefault }}</button>
-      <button class="logout-button" type="button" (click)="logout()">{{ ui().logout }}</button>
+      <div class="admin-actions">
+        <button class="ghost-button" type="button" [disabled]="isBusy || uploadingKey !== null || invalidUrls().length > 0" (click)="openPreview()">{{ ui().preview }}</button>
+        <button class="panel-submit" type="button" [disabled]="isBusy || uploadingKey !== null || invalidUrls().length > 0 || !hasUnsavedChanges()" (click)="saveContent()">{{ ui().saveChanges }}</button>
+        <button class="ghost-button" type="button" [disabled]="isBusy || !hasUnsavedChanges()" (click)="discardChanges()">{{ ui().discardChanges }}</button>
+      </div>
+      <div class="admin-actions admin-actions--secondary">
+        <button class="ghost-button" type="button" [disabled]="isBusy" (click)="resetContent()">{{ ui().resetDefault }}</button>
+        <button class="logout-button" type="button" (click)="logout()">{{ ui().logout }}</button>
+      </div>
     </div>
   </ng-template>
 </aside>
 
 <div class="admin-backdrop" *ngIf="isAdminPanelOpen" (click)="closeAdminPanel()"></div>
+
+<div class="preview-bar" *ngIf="isPreviewing()" role="region" [attr.aria-label]="ui().preview">
+  <p class="preview-bar__text">{{ ui().previewBanner.replace('{lang}', activeLanguage().toUpperCase()) }}</p>
+  <p class="preview-bar__status" *ngIf="statusMessage" [class.preview-bar__status--error]="statusIsError" role="status">{{ statusMessage }}</p>
+  <div class="preview-bar__actions">
+    <button class="ghost-button" type="button" (click)="backToEditor()">{{ ui().backToEditor }}</button>
+    <button class="panel-submit" type="button" [disabled]="isBusy" (click)="publishFromPreview()">{{ ui().saveChanges }}</button>
+  </div>
+</div>
 
 <section id="home" class="hero">
   <div class="hero-background">
@@ -344,7 +518,7 @@
   </div>
 </section>
 
-<section id="about" class="about">
+<section id="about" class="about" *ngIf="isSectionVisible('about')">
   <div class="container">
     <h2 class="section-title slide-up">{{ content().about.title }}</h2>
     <div class="about-content">
@@ -353,53 +527,67 @@
         <p *ngFor="let paragraph of content().about.paragraphs">{{ paragraph }}</p>
       </div>
       <div class="about-image slide-up">
-        <div class="image-placeholder">
-          <div class="image-decoration"></div>
+        <img class="about-photo" *ngIf="content().about.imageUrl; else defaultAboutImage" [src]="content().about.imageUrl" [alt]="content().about.imageAlt || content().hero.title" />
+        <ng-template #defaultAboutImage>
+          <div class="image-placeholder">
+            <div class="image-decoration"></div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="work" class="work" *ngIf="isSectionVisible('work')">
+  <div class="container">
+    <h2 class="section-title slide-up">{{ content().work.title }}</h2>
+    <p class="section-intro slide-up" *ngIf="content().work.intro">{{ content().work.intro }}</p>
+
+    <div class="work-grid">
+      <div class="card padding" *ngFor="let item of visibleWorkItems()">
+        <div class="card-icon" *ngIf="!item.imageUrl || item.icon">{{ item.icon || '📰' }}</div>
+        <img class="card-image" *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.imageAlt || item.title" />
+        <p class="card-meta" *ngIf="item.category || item.date">
+          <span class="card-category" *ngIf="item.category">{{ item.category }}</span>
+          <span *ngIf="item.date">{{ item.date }}</span>
+        </p>
+        <h3>{{ item.title }}</h3>
+        <p class="card-description">{{ item.description }}</p>
+        <div class="card-links" *ngIf="item.videoUrl || item.linkUrl">
+          <a class="video-link" *ngIf="item.videoUrl" [href]="item.videoUrl" target="_blank" rel="noopener">▶ {{ item.videoLabel || ui().openVideo }}</a>
+          <a class="video-link" *ngIf="item.linkUrl" [href]="item.linkUrl" target="_blank" rel="noopener">{{ item.linkLabel || ui().readMore }} →</a>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="work" class="work">
-  <div class="container">
-    <h2 class="section-title slide-up">{{ content().work.title }}</h2>
-
-    <div class="work-grid">
-      <div class="card padding" *ngFor="let item of content().work.items">
-        <div class="card-icon">{{ item.icon || '📰' }}</div>
-        <img class="card-image" *ngIf="item.imageUrl" [src]="item.imageUrl" [alt]="item.title" />
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.description }}</p>
-        <a class="video-link" *ngIf="item.videoUrl" [href]="item.videoUrl" target="_blank" rel="noopener">{{ ui().openVideo }}</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="awards" class="awards">
+<section id="awards" class="awards" *ngIf="isSectionVisible('awards')">
   <div class="container">
     <h2 class="section-title slide-up">{{ content().awards.title }}</h2>
+    <p class="section-intro slide-up" *ngIf="content().awards.intro">{{ content().awards.intro }}</p>
 
     <div class="timeline">
-      <div class="timeline-item slide-up" *ngFor="let item of content().awards.items">
+      <div class="timeline-item slide-up" *ngFor="let item of visibleAwardItems()">
         <div class="timeline-year">{{ item.year }}</div>
         <div class="timeline-content">
           <h3>{{ item.title }}</h3>
           <p>{{ item.description }}</p>
+          <a class="timeline-link" *ngIf="item.linkUrl" [href]="item.linkUrl" target="_blank" rel="noopener">{{ item.linkLabel || ui().readMore }} →</a>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="contact" class="contact">
+<section id="contact" class="contact" *ngIf="isSectionVisible('contact')">
   <div class="container">
     <h2 class="section-title slide-up">{{ content().contact.title }}</h2>
+    <p class="section-intro slide-up" *ngIf="content().contact.intro">{{ content().contact.intro }}</p>
 
     <div class="contact-content">
       <div class="contact-info slide-up">
-        <div class="contact-item">
+        <div class="contact-item" *ngIf="content().contact.email">
           <div class="contact-icon">📧</div>
           <div>
             <h3>{{ ui().email }}</h3>
@@ -407,11 +595,27 @@
           </div>
         </div>
 
-        <div class="contact-item">
+        <div class="contact-item" *ngIf="content().contact.phone">
+          <div class="contact-icon">📞</div>
+          <div>
+            <h3>{{ ui().phone }}</h3>
+            <a [href]="telHref(content().contact.phone!)">{{ content().contact.phone }}</a>
+          </div>
+        </div>
+
+        <div class="contact-item" *ngIf="content().contact.twitterUrl">
           <div class="contact-icon">🐦</div>
           <div>
             <h3>X - Twitter</h3>
             <a [href]="content().contact.twitterUrl" target="_blank" rel="noopener">{{ content().contact.twitterLabel }}</a>
+          </div>
+        </div>
+
+        <div class="contact-item" *ngFor="let link of contactLinks()">
+          <div class="contact-icon">🔗</div>
+          <div>
+            <h3>{{ link.label || link.url }}</h3>
+            <a [href]="link.url" target="_blank" rel="noopener">{{ link.url }}</a>
           </div>
         </div>
       </div>
@@ -425,7 +629,7 @@
   </div>
 </section>
 
-<footer class="footer">
+<footer class="footer" [class.footer--preview]="isPreviewing()">
   <div class="container footer-bar">
     <p>&copy; 2026 CosmoPolish. All rights reserved.</p>
     <button class="footer-admin-link" type="button" (click)="toggleAdminPanel()">

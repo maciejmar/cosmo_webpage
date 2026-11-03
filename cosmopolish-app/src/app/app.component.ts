@@ -2,12 +2,13 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AwardItem, ContentBlock, LanguageCode, SiteContent } from './models/site-content';
+import { AwardItem, ContentBlock, LanguageCode, SectionId, SiteContent } from './models/site-content';
 import { AuditEvent, AuditService } from './services/audit.service';
 import { AuthService } from './services/auth.service';
 import { ContentService, ContentVersion } from './services/content.service';
 
 const LANGUAGE_STORAGE_KEY = 'cosmopolish-language';
+const PREVIEW_STORAGE_KEY = 'cosmopolish-preview';
 
 interface UiText {
   home: string;
@@ -24,8 +25,39 @@ interface UiText {
   manageContent: string;
   adminSignIn: string;
   password: string;
-  testCredentials: string;
   saveChanges: string;
+  preview: string;
+  previewBanner: string;
+  backToEditor: string;
+  unsavedChanges: string;
+  noChanges: string;
+  discardChanges: string;
+  discardConfirm: string;
+  switchLanguageConfirm: string;
+  draftSaving: string;
+  draftSaved: string;
+  draftError: string;
+  draftRestored: string;
+  leaveConfirm: string;
+  invalidUrls: string;
+  category: string;
+  date: string;
+  imageAlt: string;
+  videoLabel: string;
+  linkUrl: string;
+  linkLabel: string;
+  readMore: string;
+  hideItem: string;
+  hiddenBadge: string;
+  hideSection: string;
+  sectionIntro: string;
+  moveUp: string;
+  moveDown: string;
+  phone: string;
+  otherLinks: string;
+  addLink: string;
+  linkName: string;
+  aboutImage: string;
   resetDefault: string;
   logout: string;
   addParagraph: string;
@@ -97,8 +129,39 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     manageContent: 'Content management',
     adminSignIn: 'Administrator sign in',
     password: 'Password',
-    testCredentials: 'Test credentials:',
-    saveChanges: 'Save changes',
+    saveChanges: 'Publish',
+    preview: 'Preview',
+    previewBanner: 'Preview ({lang}) – this is how the site will look. Changes are not published yet.',
+    backToEditor: 'Back to editor',
+    unsavedChanges: 'Unpublished changes',
+    noChanges: 'Nothing to publish – no changes.',
+    discardChanges: 'Discard changes',
+    discardConfirm: 'Discard all unpublished changes in this language?',
+    switchLanguageConfirm: 'The draft could not be saved on the server. Switching the language discards your changes. Continue?',
+    draftSaving: 'Saving draft…',
+    draftSaved: 'Draft saved on the server at {time}',
+    draftError: 'Could not save the draft on the server – check your connection.',
+    draftRestored: 'Unpublished draft loaded (saved {date} by {user}).',
+    leaveConfirm: 'The latest changes have not been saved yet.',
+    invalidUrls: 'Fix these links before publishing (http(s) link required):',
+    category: 'Category',
+    date: 'Date',
+    imageAlt: 'Image description (alt text)',
+    videoLabel: 'Video button text',
+    linkUrl: 'Link (article, publication, book…)',
+    linkLabel: 'Link button text',
+    readMore: 'Read more',
+    hideItem: 'Hide on the site',
+    hiddenBadge: 'hidden',
+    hideSection: 'Hide this section on the site',
+    sectionIntro: 'Intro text under the heading',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    phone: 'Phone',
+    otherLinks: 'Other links (Facebook, YouTube, …)',
+    addLink: 'Add link',
+    linkName: 'Name',
+    aboutImage: 'Photo (replaces the default one)',
     resetDefault: 'Reset current language',
     logout: 'Log out',
     addParagraph: 'Add paragraph',
@@ -131,7 +194,7 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     openVideo: 'Open video',
     apiError: 'Server is unavailable. Try again later.',
     saving: 'Saving…',
-    saved: 'Changes saved.',
+    saved: 'Changes published.',
     saveError: 'Could not save changes.',
     sessionExpired: 'Your session has expired. Log in again.',
     uploading: 'Uploading image…',
@@ -177,8 +240,39 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     manageContent: 'Zarządzanie treścią',
     adminSignIn: 'Logowanie administratora',
     password: 'Hasło',
-    testCredentials: 'Dane testowe:',
-    saveChanges: 'Zapisz zmiany',
+    saveChanges: 'Opublikuj',
+    preview: 'Podgląd',
+    previewBanner: 'Podgląd ({lang}) – tak będzie wyglądała strona. Zmiany nie są jeszcze opublikowane.',
+    backToEditor: 'Wróć do edycji',
+    unsavedChanges: 'Nieopublikowane zmiany',
+    noChanges: 'Nie ma czego publikować – brak zmian.',
+    discardChanges: 'Odrzuć zmiany',
+    discardConfirm: 'Odrzucić wszystkie nieopublikowane zmiany w tym języku?',
+    switchLanguageConfirm: 'Nie udało się zapisać szkicu na serwerze. Zmiana języka odrzuci zmiany. Kontynuować?',
+    draftSaving: 'Zapisywanie szkicu…',
+    draftSaved: 'Szkic zapisany na serwerze o {time}',
+    draftError: 'Nie udało się zapisać szkicu na serwerze – sprawdź połączenie.',
+    draftRestored: 'Wczytano nieopublikowany szkic (zapisany {date}, {user}).',
+    leaveConfirm: 'Ostatnie zmiany nie zostały jeszcze zapisane.',
+    invalidUrls: 'Popraw linki przed publikacją (wymagany link http(s)):',
+    category: 'Kategoria',
+    date: 'Data',
+    imageAlt: 'Opis zdjęcia (tekst alternatywny)',
+    videoLabel: 'Tekst przycisku wideo',
+    linkUrl: 'Link (artykuł, publikacja, książka…)',
+    linkLabel: 'Tekst przycisku linku',
+    readMore: 'Czytaj więcej',
+    hideItem: 'Ukryj na stronie',
+    hiddenBadge: 'ukryty',
+    hideSection: 'Ukryj tę sekcję na stronie',
+    sectionIntro: 'Tekst wprowadzenia pod nagłówkiem',
+    moveUp: 'W górę',
+    moveDown: 'W dół',
+    phone: 'Telefon',
+    otherLinks: 'Inne linki (Facebook, YouTube, …)',
+    addLink: 'Dodaj link',
+    linkName: 'Nazwa',
+    aboutImage: 'Zdjęcie (zastępuje domyślne)',
     resetDefault: 'Przywróć bieżący język',
     logout: 'Wyloguj',
     addParagraph: 'Dodaj akapit',
@@ -211,7 +305,7 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
     openVideo: 'Otwórz wideo',
     apiError: 'Serwer jest niedostępny. Spróbuj ponownie później.',
     saving: 'Zapisywanie…',
-    saved: 'Zmiany zapisane.',
+    saved: 'Zmiany opublikowane.',
     saveError: 'Nie udało się zapisać zmian.',
     sessionExpired: 'Sesja wygasła. Zaloguj się ponownie.',
     uploading: 'Wysyłanie zdjęcia…',
@@ -265,7 +359,15 @@ export class AppComponent implements OnInit, OnDestroy {
   isBusy = false;
   statusMessage = '';
   statusIsError = false;
-  uploadingIndex: number | null = null;
+  draftState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
+  draftSavedAt: string | null = null;
+  draftNotice = '';
+  /** JSON of the draft as the server has it (or of the published content when there is no draft). */
+  private syncedDraftJson = '';
+  private draftTimer?: ReturnType<typeof setTimeout>;
+  private draftSync: Promise<void> | null = null;
+  /** Which image field is being uploaded, e.g. "work-2" or "about". */
+  uploadingKey: string | null = null;
   versions: ContentVersion[] = [];
   versionsError = '';
   auditEvents: AuditEvent[] = [];
@@ -277,8 +379,15 @@ export class AppComponent implements OnInit, OnDestroy {
   activeLanguage = signal<LanguageCode>(this.readLanguage());
   editableContent: SiteContent = this.contentService.createEditableCopy(this.activeLanguage());
 
+  /** Draft shown on the page instead of the published content while previewing. */
+  readonly previewContent = signal<SiteContent | null>(null);
+  readonly isPreviewing = computed(() => this.previewContent() !== null);
+
   readonly localizedContent = this.contentService.content;
-  readonly content = computed(() => this.localizedContent()[this.activeLanguage()]);
+  readonly content = computed(() => this.previewContent() ?? this.localizedContent()[this.activeLanguage()]);
+  readonly visibleWorkItems = computed(() => this.content().work.items.filter((item) => !item.hidden));
+  readonly visibleAwardItems = computed(() => this.content().awards.items.filter((item) => !item.hidden));
+  readonly contactLinks = computed(() => (this.content().contact.links ?? []).filter((link) => link.url));
   readonly isLoggedIn = this.authService.isLoggedIn;
   readonly username = this.authService.username;
   readonly workPreviewCount = computed(() => this.content().work.items.length);
@@ -292,20 +401,93 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.contentService.load().then(() => {
-      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+    this.contentService.load().then(async () => {
+      this.resetEditor();
       setTimeout(() => this.observeElements(), 50);
+      await this.loadDraft();
+      this.resumePreviewAfterReload();
     });
     this.observeElements();
     this.updateActiveSection();
     window.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.onResize);
+    window.addEventListener('beforeunload', this.onBeforeUnload);
   }
 
   ngOnDestroy() {
     window.removeEventListener('keydown', this.onKeydown);
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('beforeunload', this.onBeforeUnload);
+    clearTimeout(this.draftTimer);
     document.body.style.overflow = '';
+  }
+
+  /** Called on every input, change and click in the editor; saves the draft once editing pauses. */
+  scheduleDraftSave() {
+    if (!this.isLoggedIn()) {
+      return;
+    }
+    clearTimeout(this.draftTimer);
+    this.draftTimer = setTimeout(() => this.syncDraft(), 1500);
+  }
+
+  draftStatus(): string {
+    switch (this.draftState) {
+      case 'saving':
+        return this.ui().draftSaving;
+      case 'error':
+        return this.ui().draftError;
+      case 'saved':
+        return this.draftSavedAt
+          ? this.ui().draftSaved.replace('{time}', new Date(this.draftSavedAt).toLocaleTimeString())
+          : '';
+      default:
+        return '';
+    }
+  }
+
+  /**
+   * Sends the editor state to the server as the language's draft (or deletes the draft when the
+   * editor matches the published content again). Waits for a save already in flight first.
+   */
+  async syncDraft(): Promise<void> {
+    clearTimeout(this.draftTimer);
+    if (this.draftSync) {
+      await this.draftSync;
+    }
+    if (!this.isLoggedIn() || !this.isDraftDirty()) {
+      return;
+    }
+
+    const language = this.activeLanguage();
+    const json = JSON.stringify(this.editableContent);
+    const changed = this.hasUnsavedChanges();
+    this.draftState = 'saving';
+
+    this.draftSync = (async () => {
+      try {
+        if (changed) {
+          const draft = await this.contentService.saveDraft(language, JSON.parse(json) as SiteContent);
+          this.draftSavedAt = draft.savedAt;
+        } else {
+          await this.contentService.deleteDraft(language);
+          this.draftSavedAt = null;
+        }
+        if (language === this.activeLanguage()) {
+          this.syncedDraftJson = json;
+        }
+        this.draftState = changed ? 'saved' : 'idle';
+      } catch {
+        this.draftState = 'error';
+      }
+    })();
+
+    await this.draftSync;
+    this.draftSync = null;
+    // Edits made while the request was running.
+    if (this.isDraftDirty()) {
+      this.scheduleDraftSave();
+    }
   }
 
   scrollToSection(sectionId: string) {
@@ -363,13 +545,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.lockBodyScroll(this.isAdminPanelOpen);
   }
 
+  // The draft is kept while the panel is closed (e.g. during preview); it is replaced only
+  // after publishing, discarding, switching the language or logging in.
   toggleAdminPanel() {
     this.isAdminPanelOpen = !this.isAdminPanelOpen;
     this.loginError = '';
     this.clearStatus();
 
     if (this.isAdminPanelOpen) {
-      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+      this.exitPreview();
       this.closeMenu();
       if (this.isLoggedIn()) {
         this.refreshHistory();
@@ -388,17 +572,25 @@ export class AppComponent implements OnInit, OnDestroy {
     this.lockBodyScroll(this.isMenuOpen);
   }
 
-  switchLanguage(language: LanguageCode) {
-    if (this.activeLanguage() === language) {
+  async switchLanguage(language: LanguageCode) {
+    if (this.activeLanguage() === language || this.isPreviewing()) {
       return;
+    }
+    if (this.isLoggedIn()) {
+      // The draft of the current language goes to the server first; it is loaded again when switching back.
+      await this.syncDraft();
+      if (this.isDraftDirty() && !window.confirm(this.ui().switchLanguageConfirm)) {
+        return;
+      }
     }
 
     this.activeLanguage.set(language);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     this.loginError = '';
     this.clearStatus();
-    this.editableContent = this.contentService.createEditableCopy(language);
+    this.resetEditor();
     setTimeout(() => this.observeElements(), 50);
+    await this.loadDraft();
   }
 
   async login() {
@@ -417,9 +609,10 @@ export class AppComponent implements OnInit, OnDestroy {
       }
 
       this.clearStatus();
-      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+      this.resetEditor();
       this.loginForm.password = '';
       this.refreshHistory();
+      await this.loadDraft();
     } catch (error) {
       this.loginError = (error as HttpErrorResponse).status === 429 ? this.apiMessage(error) : this.ui().apiError;
     } finally {
@@ -427,8 +620,11 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  logout() {
+  async logout() {
+    await this.syncDraft();
     this.authService.logout();
+    this.draftState = 'idle';
+    this.draftNotice = '';
     this.loginForm = { username: '', password: '' };
     this.loginError = '';
     this.clearStatus();
@@ -436,16 +632,75 @@ export class AppComponent implements OnInit, OnDestroy {
     this.auditEvents = [];
   }
 
-  async saveContent() {
-    await this.runAdminAction(async () => {
+  hasUnsavedChanges(): boolean {
+    return this.contentService.isChanged(this.activeLanguage(), this.editableContent);
+  }
+
+  invalidUrls(): string[] {
+    return this.contentService.findInvalidUrls(this.editableContent);
+  }
+
+  /** Shows the draft on the real page, exactly as visitors would see it after publishing. */
+  openPreview() {
+    if (this.invalidUrls().length) {
+      return;
+    }
+
+    this.clearStatus();
+    this.previewContent.set(this.contentService.clone(this.editableContent));
+    this.rememberPreview(true);
+    this.syncDraft();
+    this.closeAdminPanel();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => this.observeElements(), 50);
+  }
+
+  backToEditor() {
+    if (!this.isAdminPanelOpen) {
+      this.toggleAdminPanel();
+    }
+  }
+
+  async publishFromPreview() {
+    if (await this.saveContent()) {
+      this.exitPreview();
+    }
+  }
+
+  async saveContent(): Promise<boolean> {
+    if (this.invalidUrls().length) {
+      return false;
+    }
+    if (!this.hasUnsavedChanges()) {
+      this.setStatus(this.ui().noChanges, false);
+      return false;
+    }
+
+    // Publishing also deletes the language's draft on the server.
+    return this.runAdminAction(async () => {
       await this.contentService.save(this.activeLanguage(), this.editableContent);
-      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+      this.resetEditor();
     });
+  }
+
+  async discardChanges() {
+    if (!window.confirm(this.ui().discardConfirm)) {
+      return;
+    }
+
+    this.resetEditor();
+    this.clearStatus();
+    try {
+      await this.contentService.deleteDraft(this.activeLanguage());
+    } catch {
+      this.draftState = 'error';
+    }
   }
 
   async resetContent() {
     await this.runAdminAction(async () => {
-      this.editableContent = await this.contentService.reset(this.activeLanguage());
+      await this.contentService.reset(this.activeLanguage());
+      this.resetEditor();
     });
   }
 
@@ -473,7 +728,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     await this.runAdminAction(async () => {
       await this.contentService.restoreVersion(version.id);
-      this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+      this.resetEditor();
     }, this.ui().restored);
   }
 
@@ -515,7 +770,8 @@ export class AppComponent implements OnInit, OnDestroy {
     this.editableContent.work.items.splice(index, 1);
   }
 
-  async onWorkImageSelected(event: Event, index: number) {
+  /** Uploads the chosen file and stores its URL in `target.imageUrl` (a work item or the About section). */
+  async onImageSelected(event: Event, target: { imageUrl?: string }, key: string) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
@@ -524,22 +780,48 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const item = this.editableContent.work.items[index];
-    this.uploadingIndex = index;
+    this.uploadingKey = key;
     this.setStatus(this.ui().uploading, false);
 
     try {
-      item.imageUrl = await this.contentService.uploadImage(file);
+      target.imageUrl = await this.contentService.uploadImage(file);
       this.clearStatus();
+      this.scheduleDraftSave();
     } catch (error) {
       this.setStatus(this.isUnauthorized(error) ? this.ui().sessionExpired : this.ui().uploadError, true);
     } finally {
-      this.uploadingIndex = null;
+      this.uploadingKey = null;
     }
   }
 
-  removeWorkImage(index: number) {
-    this.editableContent.work.items[index].imageUrl = '';
+  removeImage(target: { imageUrl?: string }) {
+    target.imageUrl = '';
+  }
+
+  /** Swaps an item with its neighbour; `direction` is -1 (up) or 1 (down). */
+  moveItem<T>(items: T[], index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= items.length) {
+      return;
+    }
+    [items[index], items[target]] = [items[target], items[index]];
+  }
+
+  isSectionVisible(section: SectionId): boolean {
+    return !this.content()[section].hidden;
+  }
+
+  telHref(phone: string): string {
+    return `tel:${phone.replace(/[^\d+]/g, '')}`;
+  }
+
+  addContactLink() {
+    const contact = this.editableContent.contact;
+    contact.links = [...(contact.links ?? []), { label: '', url: '' }];
+  }
+
+  removeContactLink(index: number) {
+    this.editableContent.contact.links?.splice(index, 1);
   }
 
   addAwardItem() {
@@ -577,9 +859,101 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   };
 
-  private async runAdminAction(action: () => Promise<void>, successMessage = this.ui().saved) {
-    if (this.isBusy) {
+  private exitPreview() {
+    this.rememberPreview(false);
+    if (this.isPreviewing()) {
+      this.previewContent.set(null);
+      setTimeout(() => this.observeElements(), 50);
+    }
+  }
+
+  /** Editor = published content of the active language (no draft). */
+  private resetEditor() {
+    this.editableContent = this.contentService.createEditableCopy(this.activeLanguage());
+    this.syncedDraftJson = JSON.stringify(this.editableContent);
+    this.draftSavedAt = null;
+    this.draftState = 'idle';
+    this.draftNotice = '';
+  }
+
+  /** Puts the server-side draft of the active language (if any) into the editor. */
+  private async loadDraft() {
+    if (!this.isLoggedIn()) {
       return;
+    }
+
+    const language = this.activeLanguage();
+    try {
+      const draft = await this.contentService.getDraft(language);
+      if (!draft || language !== this.activeLanguage() || !this.contentService.isChanged(language, draft.content)) {
+        return;
+      }
+
+      this.editableContent = draft.content;
+      this.syncedDraftJson = JSON.stringify(draft.content);
+      this.draftSavedAt = draft.savedAt;
+      this.draftState = 'saved';
+      this.draftNotice = this.ui()
+        .draftRestored.replace('{date}', new Date(draft.savedAt).toLocaleString())
+        .replace('{user}', draft.savedBy);
+    } catch {
+      this.draftState = 'error';
+    }
+  }
+
+  private isDraftDirty(): boolean {
+    return JSON.stringify(this.editableContent) !== this.syncedDraftJson;
+  }
+
+  // Preview mode survives F5: the flag lives in sessionStorage (this tab only), the content in the draft.
+  private rememberPreview(on: boolean) {
+    try {
+      if (on) {
+        sessionStorage.setItem(PREVIEW_STORAGE_KEY, this.activeLanguage());
+      } else {
+        sessionStorage.removeItem(PREVIEW_STORAGE_KEY);
+      }
+    } catch {
+      // Storage unavailable (private mode) - preview just does not survive a reload.
+    }
+  }
+
+  private resumePreviewAfterReload() {
+    let language: string | null = null;
+    try {
+      language = sessionStorage.getItem(PREVIEW_STORAGE_KEY);
+    } catch {
+      return;
+    }
+
+    if (language === this.activeLanguage() && this.isLoggedIn() && this.hasUnsavedChanges()) {
+      this.previewContent.set(this.contentService.clone(this.editableContent));
+      setTimeout(() => this.observeElements(), 50);
+    } else {
+      this.rememberPreview(false);
+    }
+  }
+
+  /**
+   * Leaving or reloading with edits not yet on the server: send them with a keepalive request
+   * and let the browser ask "Leave site?".
+   */
+  private onBeforeUnload = (event: BeforeUnloadEvent) => {
+    const token = this.authService.token;
+    if (!this.isLoggedIn() || !token || !this.isDraftDirty()) {
+      return;
+    }
+
+    if (this.hasUnsavedChanges()) {
+      this.contentService.saveDraftOnUnload(this.activeLanguage(), this.editableContent, token);
+    }
+    event.preventDefault();
+    event.returnValue = this.ui().leaveConfirm;
+  };
+
+  private async runAdminAction(action: () => Promise<void>, successMessage = this.ui().saved): Promise<boolean> {
+    if (this.isBusy) {
+      return false;
     }
 
     this.isBusy = true;
@@ -590,13 +964,16 @@ export class AppComponent implements OnInit, OnDestroy {
       this.setStatus(successMessage, false);
       setTimeout(() => this.observeElements(), 50);
       this.refreshHistory();
+      return true;
     } catch (error) {
       if (this.isUnauthorized(error)) {
+        // Shown on the login form and, while previewing, in the preview bar.
         this.loginError = this.ui().sessionExpired;
-        this.clearStatus();
+        this.setStatus(this.ui().sessionExpired, true);
       } else {
         this.setStatus(`${this.ui().saveError} ${this.apiMessage(error)}`.trim(), true);
       }
+      return false;
     } finally {
       this.isBusy = false;
     }
@@ -628,8 +1005,15 @@ export class AppComponent implements OnInit, OnDestroy {
       title: 'New material',
       description: 'Add a new description for this section.',
       icon: '📰',
+      category: '',
+      date: '',
       imageUrl: '',
-      videoUrl: ''
+      imageAlt: '',
+      videoUrl: '',
+      videoLabel: '',
+      linkUrl: '',
+      linkLabel: '',
+      hidden: false
     };
   }
 
@@ -637,7 +1021,10 @@ export class AppComponent implements OnInit, OnDestroy {
     return {
       year: '2026',
       title: 'New achievement',
-      description: 'Describe the distinction, project, or milestone.'
+      description: 'Describe the distinction, project, or milestone.',
+      linkUrl: '',
+      linkLabel: '',
+      hidden: false
     };
   }
 

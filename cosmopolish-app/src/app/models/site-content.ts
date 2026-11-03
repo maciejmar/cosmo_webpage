@@ -1,17 +1,46 @@
 export type LanguageCode = 'en' | 'pl';
 
+/*
+ * Fields added after the first release are optional, so content saved earlier stays valid.
+ * The API checks every field ending in "Url": it must be an http(s) link or an /uploads/ path.
+ */
+
+export interface LinkItem {
+  label: string;
+  url: string;
+}
+
 export interface ContentBlock {
   title: string;
   description: string;
   icon?: string;
+  category?: string;
+  /** Free text, e.g. "2024" or "May 2024". */
+  date?: string;
   imageUrl?: string;
+  imageAlt?: string;
   videoUrl?: string;
+  videoLabel?: string;
+  /** Link to an article, book, publication etc. */
+  linkUrl?: string;
+  linkLabel?: string;
+  /** Hidden items are kept in the editor but not shown on the site. */
+  hidden?: boolean;
 }
 
 export interface AwardItem {
   year: string;
   title: string;
   description: string;
+  linkUrl?: string;
+  linkLabel?: string;
+  hidden?: boolean;
+}
+
+/** Optional sections can be hidden as a whole (the navigation link disappears too). */
+export interface SectionSettings {
+  hidden?: boolean;
+  intro?: string;
 }
 
 export interface SiteContent {
@@ -21,27 +50,33 @@ export interface SiteContent {
     primaryCta: string;
     secondaryCta: string;
   };
-  about: {
+  about: SectionSettings & {
     title: string;
     lead: string;
     paragraphs: string[];
+    imageUrl?: string;
+    imageAlt?: string;
   };
-  work: {
+  work: SectionSettings & {
     title: string;
     items: ContentBlock[];
   };
-  awards: {
+  awards: SectionSettings & {
     title: string;
     items: AwardItem[];
   };
-  contact: {
+  contact: SectionSettings & {
     title: string;
     email: string;
+    phone?: string;
     twitterLabel: string;
     twitterUrl: string;
+    links?: LinkItem[];
     quote: string;
   };
 }
+
+export type SectionId = 'about' | 'work' | 'awards' | 'contact';
 
 export type LocalizedSiteContent = Record<LanguageCode, SiteContent>;
 

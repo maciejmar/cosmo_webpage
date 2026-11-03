@@ -22,6 +22,14 @@ przeglądarka ──► nginx ──┬─► /            pliki Angulara (SSH_T
 - **Alert e-mail** przy każdym logowaniu konta z adresu IP, z którego to konto wcześniej się nie logowało (znane IP są w `data/users.json`). Wymaga SMTP, patrz sekrety niżej.
 - Struktura treści należy do frontendu (`src/app/models/site-content.ts`). Nowe sekcje i rodzaje materiałów (teksty, zdjęcia, linki do filmów) **nie wymagają zmian w backendzie**: backend waliduje ogólnie rozmiar i typy, a każde pole kończące się na `Url` (`imageUrl`, `videoUrl`, …) musi być linkiem `http(s)` albo ścieżką `/uploads/…`.
 - Filmy nie są wgrywane ani osadzane – zapisuje się tylko link.
+- **Panel admina – publikacja w dwóch krokach:** edycja w panelu to szkic. „Podgląd” pokazuje stronę ze szkicem dokładnie tak, jak zobaczą ją odwiedzający (nic nie trafia na serwer). Z paska podglądu: „Wróć do edycji” (szkic zostaje) albo „Opublikuj”. Panel pokazuje, czy są nieopublikowane zmiany, i blokuje publikację/podgląd, gdy jakiś link nie jest `http(s)`.
+- **Szkic na serwerze** (`data/drafts.json`, jeden wspólny szkic na język): panel zapisuje go automatycznie ~1,5 s po każdej zmianie, więc F5, przycisk „wstecz” czy zamknięcie karty niczego nie gubią. Po ponownym wejściu i zalogowaniu szkic wraca do edytora, a tryb podglądu po F5 wraca razem z nim. Zmiany wpisane tuż przed zamknięciem strony są wysyłane w ostatniej chwili, a przeglądarka dodatkowo pyta „Opuścić stronę?”. Publikacja, przywrócenie wersji i „Odrzuć zmiany” usuwają szkic danego języka. Szkic nie jest publiczny i nie trafia do dziennika zdarzeń. Gdy dwóch adminów edytuje ten sam język naraz, wygrywa ostatni zapis.
+- **Pola do ustawienia w panelu:**
+  - każda sekcja (O mnie, Działalność, Nagrody, Kontakt): ukrycie całej sekcji (znika też z menu) i tekst wprowadzenia,
+  - materiał: ikona, kategoria, data, opis, zdjęcie + tekst alternatywny, link do wideo + tekst przycisku, link do artykułu/publikacji + tekst przycisku, „ukryj na stronie”, kolejność ↑↓,
+  - nagroda: link + tekst przycisku, ukrycie, kolejność,
+  - O mnie: własne zdjęcie zamiast domyślnego, kolejność akapitów,
+  - Kontakt: telefon i dowolna lista dodatkowych linków (Facebook, YouTube…).
 - Zdjęcia: JPG, PNG, GIF, WebP (typ sprawdzany po zawartości pliku, bez SVG), domyślnie maks. 8 MB (`MAX_UPLOAD_MB`).
 
 ## Wymagania

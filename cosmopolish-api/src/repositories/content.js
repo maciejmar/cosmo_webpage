@@ -19,11 +19,14 @@ export class ContentRepository {
   #store;
   #versionsDir;
   #versionIndex;
+  #drafts;
 
   constructor(dataDir) {
     this.#store = new JsonStore(join(dataDir, 'content.json'), { languages: {}, updatedAt: null, updatedBy: null });
     this.#versionsDir = join(dataDir, 'versions');
     this.#versionIndex = new JsonStore(join(this.#versionsDir, 'index.json'), { versions: [] });
+    // Unpublished edits from the admin panel, one shared draft per language (data/drafts.json).
+    this.#drafts = new JsonStore(join(dataDir, 'drafts.json'), { drafts: {} });
   }
 
   read() {
@@ -31,6 +34,9 @@ export class ContentRepository {
   }
 
   /**
+   * Publishing (or restoring) a language also clears its draft - the draft was based on
+   * the content that has just been replaced.
+   *
    * @param meta { username, ip, action: 'save' | 'restore', restoredFrom? }
    */
   async saveLanguage(language, content, meta) {
@@ -42,7 +48,28 @@ export class ContentRepository {
     }));
 
     await this.#recordVersion(language, content, saved.updatedAt, meta);
+    await this.deleteDraft(language);
     return saved;
+  }
+
+  /** { content, savedAt, savedBy } or null. */
+  async getDraft(language) {
+    const { drafts } = await this.#drafts.read();
+    return drafts[language] ?? null;
+  }
+
+  async saveDraft(language, content, username) {
+    const draft = { content, savedAt: new Date().toISOString(), savedBy: username };
+    await this.#drafts.update((data) => ({ drafts: { ...data.drafts, [language]: draft } }));
+    return draft;
+  }
+
+  async deleteDraft(language) {
+    await this.#drafts.update((data) => {
+      const drafts = { ...data.drafts };
+      delete drafts[language];
+      return { drafts };
+    });
   }
 
   /** Version metadata, newest first. */

@@ -197,6 +197,44 @@ describe('CosmoPolish API', () => {
     assert.equal(anonymous.status, 401);
   });
 
+  it('keeps an unpublished draft per language until it is published', async () => {
+    const anonymous = await json('/api/content/drafts/pl');
+    assert.equal(anonymous.status, 401);
+    assert.equal((await json('/api/content/drafts/de', { headers: auth() })).status, 404);
+
+    const empty = await (await json('/api/content/drafts/pl', { headers: auth() })).json();
+    assert.equal(empty.draft, null);
+
+    const bad = await json('/api/content/drafts/pl', {
+      method: 'PUT',
+      headers: auth(),
+      body: JSON.stringify({ work: { items: [{ linkUrl: 'javascript:alert(1)' }] } })
+    });
+    assert.equal(bad.status, 400);
+
+    const saved = await json('/api/content/drafts/pl', {
+      method: 'PUT',
+      headers: auth(),
+      body: JSON.stringify({ hero: { title: 'Szkic' } })
+    });
+    assert.equal(saved.status, 200);
+    const { draft } = await (await json('/api/content/drafts/pl', { headers: auth() })).json();
+    assert.equal(draft.content.hero.title, 'Szkic');
+    assert.equal(draft.savedBy, 'admin');
+
+    const publicContent = await (await json('/api/content')).json();
+    assert.notEqual(publicContent.languages.pl?.hero?.title, 'Szkic', 'draft is not public');
+
+    // Publishing the language clears its draft.
+    await json('/api/content/pl', { method: 'PUT', headers: auth(), body: JSON.stringify({ hero: { title: 'Szkic' } }) });
+    assert.equal((await (await json('/api/content/drafts/pl', { headers: auth() })).json()).draft, null);
+
+    await json('/api/content/drafts/en', { method: 'PUT', headers: auth(), body: JSON.stringify({ hero: { title: 'x' } }) });
+    const removed = await json('/api/content/drafts/en', { method: 'DELETE', headers: auth() });
+    assert.equal(removed.status, 204);
+    assert.equal((await (await json('/api/content/drafts/en', { headers: auth() })).json()).draft, null);
+  });
+
   it('records an audit log with client IPs', async () => {
     await json('/api/auth/login', {
       method: 'POST',

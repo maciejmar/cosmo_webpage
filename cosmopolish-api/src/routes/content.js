@@ -40,11 +40,24 @@ export function contentRouter(deps) {
     res.json(saved);
   });
 
-  router.put('/:language', auth, async (req, res) => {
+  // Drafts: unpublished edits autosaved by the admin panel, so a reload or closed tab loses nothing.
+  // Not visible to the public and not written to the audit log (they are saved every few seconds).
+  router.get('/drafts/:language', auth, supportedLanguage, async (req, res) => {
+    res.json({ draft: await content.getDraft(req.params.language) });
+  });
+
+  router.put('/drafts/:language', auth, supportedLanguage, async (req, res) => {
+    const validated = validateSiteContent(req.body);
+    res.json({ draft: await content.saveDraft(req.params.language, validated, req.user.username) });
+  });
+
+  router.delete('/drafts/:language', auth, supportedLanguage, async (req, res) => {
+    await content.deleteDraft(req.params.language);
+    res.status(204).end();
+  });
+
+  router.put('/:language', auth, supportedLanguage, async (req, res) => {
     const { language } = req.params;
-    if (!SUPPORTED_LANGUAGES.includes(language)) {
-      return res.status(404).json({ error: 'Unsupported language.' });
-    }
 
     const validated = validateSiteContent(req.body);
     const saved = await content.saveLanguage(language, validated, {
@@ -57,4 +70,11 @@ export function contentRouter(deps) {
   });
 
   return router;
+}
+
+function supportedLanguage(req, res, next) {
+  if (!SUPPORTED_LANGUAGES.includes(req.params.language)) {
+    return res.status(404).json({ error: 'Unsupported language.' });
+  }
+  next();
 }

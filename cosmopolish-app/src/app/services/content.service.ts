@@ -10,6 +10,12 @@ interface ContentResponse {
   updatedBy: string | null;
 }
 
+export interface ContentDraft {
+  content: SiteContent;
+  savedAt: string;
+  savedBy: string;
+}
+
 export interface ContentVersion {
   id: string;
   language: LanguageCode;
@@ -71,6 +77,43 @@ export class ContentService {
     this.content.set(this.mergeWithDefaults(response.languages));
   }
 
+  /** Unpublished draft of the language saved on the server, or null. Missing sections are filled from defaults. */
+  async getDraft(language: LanguageCode): Promise<ContentDraft | null> {
+    const response = await firstValueFrom(
+      this.http.get<{ draft: ContentDraft | null }>(`${environment.apiUrl}/content/drafts/${language}`)
+    );
+    const draft = response.draft;
+    return draft ? { ...draft, content: { ...this.clone(DEFAULT_SITE_CONTENT[language]), ...draft.content } } : null;
+  }
+
+  async saveDraft(language: LanguageCode, content: SiteContent): Promise<ContentDraft> {
+    const response = await firstValueFrom(
+      this.http.put<{ draft: ContentDraft }>(`${environment.apiUrl}/content/drafts/${language}`, content)
+    );
+    return response.draft;
+  }
+
+  async deleteDraft(language: LanguageCode): Promise<void> {
+    await firstValueFrom(this.http.delete(`${environment.apiUrl}/content/drafts/${language}`));
+  }
+
+  /**
+   * Last-chance draft save while the page is being closed or reloaded. HttpClient requests are
+   * cancelled on unload; a `keepalive` fetch is allowed to finish (body limit 64 kB).
+   */
+  saveDraftOnUnload(language: LanguageCode, content: SiteContent, token: string): void {
+    const body = JSON.stringify(content);
+    if (body.length > 60_000) {
+      return;
+    }
+    fetch(`${environment.apiUrl}/content/drafts/${language}`, {
+      method: 'PUT',
+      keepalive: true,
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body
+    }).catch(() => undefined);
+  }
+
   /** Uploads an image and returns its public URL (e.g. `/uploads/123-abc.jpg`). */
   async uploadImage(file: File): Promise<string> {
     const form = new FormData();
@@ -85,6 +128,36 @@ export class ContentService {
     return this.clone(this.content()[language]);
   }
 
+  /** True when the draft differs from what is currently published for the language. */
+  isChanged(language: LanguageCode, draft: SiteContent): boolean {
+    return JSON.stringify(draft) !== JSON.stringify(this.content()[language]);
+  }
+
+  /**
+   * Paths of "*Url" fields the API would reject (same rule as the backend: empty,
+   * an /uploads/ path or an absolute http(s) link), e.g. `work.items[2].videoUrl`.
+   */
+  findInvalidUrls(value: unknown, path = ''): string[] {
+    if (Array.isArray(value)) {
+      return value.flatMap((item, index) => this.findInvalidUrls(item, `${path}[${index}]`));
+    }
+    if (!value || typeof value !== 'object') {
+      return [];
+    }
+
+    return Object.entries(value).flatMap(([key, child]) => {
+      const childPath = path ? `${path}.${key}` : key;
+      if (/url$/i.test(key) && typeof child === 'string') {
+        return isAllowedUrl(child.trim()) ? [] : [childPath];
+      }
+      return this.findInvalidUrls(child, childPath);
+    });
+  }
+
+  clone(content: SiteContent): SiteContent {
+    return JSON.parse(JSON.stringify(content)) as SiteContent;
+  }
+
   private mergeWithDefaults(languages: ContentResponse['languages']): LocalizedSiteContent {
     return {
       en: { ...this.clone(DEFAULT_SITE_CONTENT.en), ...languages?.en },
@@ -92,11 +165,18 @@ export class ContentService {
     };
   }
 
-  private clone(content: SiteContent): SiteContent {
-    return JSON.parse(JSON.stringify(content)) as SiteContent;
-  }
-
   private cloneLocalized(content: LocalizedSiteContent): LocalizedSiteContent {
     return JSON.parse(JSON.stringify(content)) as LocalizedSiteContent;
+  }
+}
+
+function isAllowedUrl(value: string): boolean {
+  if (value === '' || /^\/uploads\/[A-Za-z0-9._-]+$/.test(value)) {
+    return true;
+  }
+  try {
+    return ['http:', 'https:'].includes(new URL(value).protocol);
+  } catch {
+    return false;
   }
 }
