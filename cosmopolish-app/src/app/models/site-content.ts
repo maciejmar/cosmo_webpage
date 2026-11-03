@@ -37,6 +37,22 @@ export interface AwardItem {
   hidden?: boolean;
 }
 
+/** A News post: panoramic photo, text and links, shown one after another under the hero. */
+export interface NewsPost {
+  title: string;
+  /** Free text, e.g. "3 November 2026". */
+  date?: string;
+  /** Short highlighted intro. */
+  lead?: string;
+  /** Main text; a blank line starts a new paragraph. */
+  body: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  imageCaption?: string;
+  links?: LinkItem[];
+  hidden?: boolean;
+}
+
 /** Optional sections can be hidden as a whole (the navigation link disappears too). */
 export interface SectionSettings {
   hidden?: boolean;
@@ -49,6 +65,10 @@ export interface SiteContent {
     subtitle: string;
     primaryCta: string;
     secondaryCta: string;
+  };
+  news: SectionSettings & {
+    title: string;
+    items: NewsPost[];
   };
   about: SectionSettings & {
     title: string;
@@ -76,7 +96,7 @@ export interface SiteContent {
   };
 }
 
-export type SectionId = 'about' | 'work' | 'awards' | 'contact';
+export type SectionId = 'news' | 'about' | 'work' | 'awards' | 'contact';
 
 export type LocalizedSiteContent = Record<LanguageCode, SiteContent>;
 
@@ -87,6 +107,27 @@ export const DEFAULT_SITE_CONTENT: LocalizedSiteContent = {
       subtitle: 'Journalist • Writer • Human Rights Activist',
       primaryCta: 'Discover More',
       secondaryCta: 'Get in Touch'
+    },
+    // Sample first post; admins edit or delete it in the panel. Without visible posts
+    // the section and its menu link are not shown.
+    news: {
+      title: 'News',
+      items: [
+        {
+          title: 'Welcome to the News section',
+          date: '3 November 2026',
+          lead: 'This is where the latest articles, publications, film announcements and events will appear – one after another, newest first.',
+          body:
+            'The website is growing. Alongside the overview of professional work, awards and contact details, it now has a place for current matters: new texts, interviews, premieres, meetings and statements.\n\n' +
+            'Each post can have a panoramic photo, a short lead, a longer text and links to sources – articles, recordings or event pages. Videos are linked, not embedded, so the page stays light and fast.\n\n' +
+            'Follow the updates here and on X.',
+          imageUrl: '/assets/news-welcome.jpg',
+          imageAlt: 'Mountains at sunset reflected in a calm lake',
+          imageCaption: 'Illustration',
+          links: [{ label: 'CosmoPolish on X', url: 'https://twitter.com/CosmoPolishNET' }],
+          hidden: false
+        }
+      ]
     },
     about: {
       title: 'About',
@@ -161,6 +202,25 @@ export const DEFAULT_SITE_CONTENT: LocalizedSiteContent = {
       subtitle: 'Dziennikarz • Pisarz • Działacz praw człowieka',
       primaryCta: 'Poznaj więcej',
       secondaryCta: 'Skontaktuj się'
+    },
+    news: {
+      title: 'Aktualności',
+      items: [
+        {
+          title: 'Witamy w sekcji Aktualności',
+          date: '3 listopada 2026',
+          lead: 'Tutaj będą pojawiać się najnowsze artykuły, publikacje, zapowiedzi filmów i wydarzenia – wpis za wpisem, od najnowszego.',
+          body:
+            'Strona się rozrasta. Obok przeglądu działalności, nagród i danych kontaktowych ma teraz miejsce na sprawy bieżące: nowe teksty, wywiady, premiery, spotkania i wystąpienia.\n\n' +
+            'Każdy wpis może mieć panoramiczne zdjęcie, krótki lead, dłuższą treść i linki do źródeł – artykułów, nagrań czy stron wydarzeń. Filmy są podlinkowane, a nie osadzane, dzięki czemu strona pozostaje lekka i szybka.\n\n' +
+            'Zapraszamy do śledzenia nowości tutaj i na X.',
+          imageUrl: '/assets/news-welcome.jpg',
+          imageAlt: 'Góry o zachodzie słońca odbite w spokojnym jeziorze',
+          imageCaption: 'Ilustracja',
+          links: [{ label: 'CosmoPolish na X', url: 'https://twitter.com/CosmoPolishNET' }],
+          hidden: false
+        }
+      ]
     },
     about: {
       title: 'O mnie',

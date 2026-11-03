@@ -4,6 +4,7 @@
 
     <ul class="nav-links desktop-only">
       <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">{{ ui().home }}</a></li>
+      <li *ngIf="isSectionVisible('news')"><a (click)="scrollToSection('news')" [class.active]="activeSection === 'news'">{{ ui().news }}</a></li>
       <li *ngIf="isSectionVisible('about')"><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
       <li *ngIf="isSectionVisible('work')"><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
       <li *ngIf="isSectionVisible('awards')"><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
@@ -53,6 +54,7 @@
     aria-label="Main menu">
     <ul class="mobile-links" (click)="closeMenu()">
       <li><a (click)="scrollToSection('home')" [class.active]="activeSection === 'home'">{{ ui().home }}</a></li>
+      <li *ngIf="isSectionVisible('news')"><a (click)="scrollToSection('news')" [class.active]="activeSection === 'news'">{{ ui().news }}</a></li>
       <li *ngIf="isSectionVisible('about')"><a (click)="scrollToSection('about')" [class.active]="activeSection === 'about'">{{ ui().about }}</a></li>
       <li *ngIf="isSectionVisible('work')"><a (click)="scrollToSection('work')" [class.active]="activeSection === 'work'">{{ ui().work }}</a></li>
       <li *ngIf="isSectionVisible('awards')"><a (click)="scrollToSection('awards')" [class.active]="activeSection === 'awards'">{{ ui().awards }}</a></li>
@@ -127,6 +129,104 @@
           <span>{{ ui().secondaryButton }}</span>
           <input type="text" name="heroSecondaryCta" [(ngModel)]="editableContent.hero.secondaryCta" />
         </label>
+      </section>
+
+      <section class="editor-card editor-card--news">
+        <div class="repeater__header">
+          <h3>{{ ui().news }}</h3>
+          <button class="ghost-button" type="button" (click)="addNewsPost()">{{ ui().addPost }}</button>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" name="newsHidden" [(ngModel)]="editableContent.news.hidden" />
+          <span>{{ ui().hideSection }}</span>
+        </label>
+        <label>
+          <span>{{ ui().sectionHeading }}</span>
+          <input type="text" name="newsTitle" [(ngModel)]="editableContent.news.title" />
+        </label>
+        <label>
+          <span>{{ ui().sectionIntro }}</span>
+          <textarea name="newsIntro" [(ngModel)]="editableContent.news.intro" rows="2"></textarea>
+        </label>
+        <p class="history-empty" *ngIf="!editableContent.news.items.length">{{ ui().noPosts }}</p>
+
+        <div class="repeater-item" [class.repeater-item--hidden]="post.hidden" *ngFor="let post of editableContent.news.items; let index = index; let first = first; let last = last; trackBy: trackByIndex">
+          <div class="item-toolbar">
+            <strong class="item-toolbar__title">{{ index + 1 }}. {{ post.title }}</strong>
+            <span class="history-tag" *ngIf="post.hidden">{{ ui().hiddenBadge }}</span>
+            <button class="ghost-button small-button" type="button" [disabled]="first" (click)="moveItem(editableContent.news.items, index, -1)" [attr.aria-label]="ui().moveUp">↑</button>
+            <button class="ghost-button small-button" type="button" [disabled]="last" (click)="moveItem(editableContent.news.items, index, 1)" [attr.aria-label]="ui().moveDown">↓</button>
+          </div>
+          <label class="checkbox-row">
+            <input [name]="'newsHidden' + index" type="checkbox" [(ngModel)]="post.hidden" />
+            <span>{{ ui().hideItem }}</span>
+          </label>
+          <div class="field-row">
+            <label class="field-row__wide">
+              <span>{{ ui().title }}</span>
+              <input [name]="'newsTitle' + index" type="text" [(ngModel)]="post.title" />
+            </label>
+            <label>
+              <span>{{ ui().date }}</span>
+              <input [name]="'newsDate' + index" type="text" [(ngModel)]="post.date" />
+            </label>
+          </div>
+
+          <div class="media-editor">
+            <span class="media-editor__title">{{ ui().newsImage }}</span>
+            <label class="file-upload">
+              <span>{{ ui().imageUpload }}</span>
+              <input [name]="'newsImage' + index" type="file" accept="image/jpeg,image/png,image/gif,image/webp" [disabled]="uploadingKey !== null" (change)="onImageSelected($event, post, 'news-' + index)" />
+            </label>
+            <p class="media-editor__status" *ngIf="uploadingKey === 'news-' + index">{{ ui().uploading }}</p>
+          </div>
+          <ng-container *ngIf="post.imageUrl">
+            <div class="editor-media-preview editor-media-preview--panorama">
+              <img [src]="post.imageUrl" [alt]="post.imageAlt || post.title" />
+              <button class="remove-button" type="button" (click)="removeImage(post)">{{ ui().imageRemove }}</button>
+            </div>
+            <div class="field-row">
+              <label>
+                <span>{{ ui().imageAlt }}</span>
+                <input [name]="'newsImageAlt' + index" type="text" [(ngModel)]="post.imageAlt" />
+              </label>
+              <label>
+                <span>{{ ui().imageCaption }}</span>
+                <input [name]="'newsImageCaption' + index" type="text" [(ngModel)]="post.imageCaption" />
+              </label>
+            </div>
+          </ng-container>
+
+          <label>
+            <span>{{ ui().postLead }}</span>
+            <textarea [name]="'newsLead' + index" [(ngModel)]="post.lead" rows="2"></textarea>
+          </label>
+          <label>
+            <span>{{ ui().postBody }}</span>
+            <textarea [name]="'newsBody' + index" [(ngModel)]="post.body" rows="9"></textarea>
+          </label>
+
+          <div class="repeater">
+            <div class="repeater__header">
+              <span>{{ ui().links }}</span>
+              <button class="ghost-button small-button" type="button" (click)="addPostLink(post)">{{ ui().addLink }}</button>
+            </div>
+            <div class="field-row field-row--link" *ngFor="let link of post.links ?? []; let linkIndex = index; trackBy: trackByIndex">
+              <label>
+                <span>{{ ui().linkName }}</span>
+                <input [name]="'newsLinkLabel' + index + '-' + linkIndex" type="text" [(ngModel)]="link.label" />
+              </label>
+              <label>
+                <span>URL</span>
+                <input [name]="'newsLinkUrl' + index + '-' + linkIndex" type="url" placeholder="https://" [(ngModel)]="link.url" />
+              </label>
+              <button class="remove-button small-button" type="button" (click)="removePostLink(post, linkIndex)" [attr.aria-label]="ui().remove">×</button>
+            </div>
+          </div>
+
+          <button class="remove-button" type="button" (click)="removeNewsPost(index)">{{ ui().remove }}</button>
+        </div>
       </section>
 
       <section class="editor-card">
@@ -515,6 +615,44 @@
     <div class="ice ice-2"></div>
     <div class="ice ice-3"></div>
     <div class="ice ice-4"></div>
+  </div>
+</section>
+
+<section id="news" class="news" *ngIf="isSectionVisible('news')">
+  <div class="container news-container">
+    <h2 class="section-title slide-up">{{ content().news.title }}</h2>
+    <p class="section-intro slide-up" *ngIf="content().news.intro">{{ content().news.intro }}</p>
+
+    <div class="news-feed">
+      <article class="news-post slide-up" *ngFor="let post of visibleNewsPosts()" [class.news-post--no-image]="!post.imageUrl">
+        <figure class="news-post__media" *ngIf="post.imageUrl">
+          <img [src]="post.imageUrl" [alt]="post.imageAlt || post.title" loading="lazy" />
+          <figcaption *ngIf="post.imageCaption">{{ post.imageCaption }}</figcaption>
+        </figure>
+
+        <div class="news-post__content">
+          <time class="news-post__date" *ngIf="post.date">{{ post.date }}</time>
+          <h3 class="news-post__title">{{ post.title }}</h3>
+          <p class="news-post__lead" *ngIf="post.lead">{{ post.lead }}</p>
+
+          <div class="news-post__body" [class.news-post__body--collapsed]="isLongPost(post) && !isPostExpanded(post)">
+            <p *ngFor="let paragraph of paragraphsOf(post.body)">{{ paragraph }}</p>
+          </div>
+          <button class="news-post__toggle" type="button" *ngIf="isLongPost(post)" (click)="togglePost(post)">
+            {{ isPostExpanded(post) ? ui().showLess : ui().showMore }}
+          </button>
+
+          <div class="news-post__links" *ngIf="post.links?.length">
+            <ng-container *ngFor="let link of post.links">
+              <a class="news-link" *ngIf="link.url" [href]="link.url" target="_blank" rel="noopener">
+                {{ link.label || link.url }}
+                <span aria-hidden="true">↗</span>
+              </a>
+            </ng-container>
+          </div>
+        </div>
+      </article>
+    </div>
   </div>
 </section>
 

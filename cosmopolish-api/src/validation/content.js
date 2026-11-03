@@ -5,8 +5,9 @@ const MAX_STRING_LENGTH = 20_000;
 const MAX_ARRAY_LENGTH = 500;
 const MAX_KEYS = 100;
 const KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
-// Uploaded images live under /uploads/; everything else must be an absolute http(s) link.
-const UPLOAD_PATH_PATTERN = /^\/uploads\/[A-Za-z0-9._-]+$/;
+// Uploaded images live under /uploads/, images shipped with the site under /assets/;
+// everything else must be an absolute http(s) link.
+const UPLOAD_PATH_PATTERN = /^\/(uploads|assets)\/[A-Za-z0-9_-][A-Za-z0-9._-]*$/;
 
 export class ValidationError extends Error {
   constructor(message) {

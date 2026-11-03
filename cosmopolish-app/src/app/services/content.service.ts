@@ -171,7 +171,7 @@ export class ContentService {
 }
 
 function isAllowedUrl(value: string): boolean {
-  if (value === '' || /^\/uploads\/[A-Za-z0-9._-]+$/.test(value)) {
+  if (value === '' || /^\/(uploads|assets)\/[A-Za-z0-9_-][A-Za-z0-9._-]*$/.test(value)) {
     return true;
   }
   try {

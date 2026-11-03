@@ -452,6 +452,154 @@
   }
 }
 
+// News: full-width posts one after another, each with a panoramic photo
+
+.news {
+  padding: 8rem 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f5fb 100%);
+}
+
+.news-container {
+  max-width: 1080px;
+}
+
+.news-feed {
+  display: grid;
+  gap: 4rem;
+}
+
+.news-post {
+  overflow: hidden;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(26, 26, 46, 0.1);
+  border: 1px solid rgba(26, 26, 46, 0.06);
+}
+
+.news-post__media {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 21 / 9;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 1.2s ease;
+  }
+
+  figcaption {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: 70%;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 0.8rem;
+    backdrop-filter: blur(6px);
+  }
+}
+
+.news-post:hover .news-post__media img {
+  transform: scale(1.03);
+}
+
+.news-post__content {
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 5vw, 4rem) clamp(2rem, 4vw, 3rem);
+}
+
+// Posts without a photo get an accent bar instead.
+.news-post--no-image {
+  border-top: 6px solid #667eea;
+}
+
+.news-post__date {
+  display: inline-block;
+  margin-bottom: 0.9rem;
+  color: #667eea;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.news-post__title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.7rem, 3.5vw, 2.6rem);
+  line-height: 1.15;
+  color: #1a1a1a;
+}
+
+.news-post__lead {
+  margin: 0 0 1.25rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #333;
+}
+
+.news-post__body {
+  max-width: 72ch;
+  color: #555;
+  font-size: 1.08rem;
+  line-height: 1.75;
+
+  p {
+    margin: 0 0 1rem;
+  }
+}
+
+.news-post__body--collapsed {
+  max-height: 11em;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+}
+
+.news-post__toggle {
+  margin-top: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #0066cc;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.news-post__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.news-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 102, 204, 0.25);
+  background: rgba(0, 102, 204, 0.06);
+  color: #0066cc;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background: #0066cc;
+    color: #fff;
+  }
+}
+
 .work {
   padding: 8rem 0;
   background: white;
@@ -710,6 +858,8 @@
 
 #home.hero {
   position: relative;
+  // Keeps the decorative .ice-overlay (z-index 999999) inside the hero, below the navbar and admin panel.
+  isolation: isolate;
   min-height: 100svh;
   display: grid;
   place-items: center;
@@ -1417,6 +1567,20 @@ textarea {
   gap: 0.85rem;
 }
 
+.field-row__wide {
+  grid-column: span 2;
+}
+
+.field-row--link {
+  grid-template-columns: 1fr 1.6fr auto;
+  align-items: end;
+}
+
+.editor-media-preview--panorama img {
+  aspect-ratio: 21 / 9;
+  max-height: none;
+}
+
 .item-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1623,6 +1787,35 @@ textarea {
 
   .admin-panel {
     padding: 1.1rem;
+  }
+
+  .news {
+    padding: 5rem 0;
+  }
+
+  .news-feed {
+    gap: 2.5rem;
+  }
+
+  .news-post {
+    border-radius: 20px;
+  }
+
+  // Panorama is too thin on a phone.
+  .news-post__media {
+    aspect-ratio: 16 / 9;
+  }
+
+  .news-post__lead {
+    font-size: 1.15rem;
+  }
+
+  .field-row__wide {
+    grid-column: auto;
+  }
+
+  .field-row--link {
+    grid-template-columns: 1fr;
   }
 
   .publish-bar {

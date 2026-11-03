@@ -2,16 +2,29 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AwardItem, ContentBlock, LanguageCode, SectionId, SiteContent } from './models/site-content';
+import { AwardItem, ContentBlock, LanguageCode, NewsPost, SectionId, SiteContent } from './models/site-content';
 import { AuditEvent, AuditService } from './services/audit.service';
 import { AuthService } from './services/auth.service';
 import { ContentService, ContentVersion } from './services/content.service';
 
 const LANGUAGE_STORAGE_KEY = 'cosmopolish-language';
 const PREVIEW_STORAGE_KEY = 'cosmopolish-preview';
+/** News posts with a longer body are collapsed on the site behind "Read more". */
+const NEWS_COLLAPSE_LENGTH = 600;
 
 interface UiText {
   home: string;
+  news: string;
+  addPost: string;
+  newPostTitle: string;
+  noPosts: string;
+  newsImage: string;
+  imageCaption: string;
+  postLead: string;
+  postBody: string;
+  links: string;
+  showMore: string;
+  showLess: string;
   about: string;
   work: string;
   awards: string;
@@ -116,6 +129,17 @@ interface UiText {
 const UI_TEXT: Record<LanguageCode, UiText> = {
   en: {
     home: 'Home',
+    news: 'News',
+    addPost: 'Add post',
+    newPostTitle: 'New post',
+    noPosts: 'No posts yet – the section appears on the site once the first post is published.',
+    newsImage: 'Panoramic photo (best 21:9, e.g. 2100×900 px)',
+    imageCaption: 'Photo caption / credit',
+    postLead: 'Lead (short intro, highlighted)',
+    postBody: 'Text (an empty line starts a new paragraph)',
+    links: 'Links',
+    showMore: 'Read more',
+    showLess: 'Show less',
     about: 'About',
     work: 'Work',
     awards: 'Awards',
@@ -227,6 +251,17 @@ const UI_TEXT: Record<LanguageCode, UiText> = {
   },
   pl: {
     home: 'Start',
+    news: 'Aktualności',
+    addPost: 'Dodaj wpis',
+    newPostTitle: 'Nowy wpis',
+    noPosts: 'Brak wpisów – sekcja pojawi się na stronie po opublikowaniu pierwszego wpisu.',
+    newsImage: 'Zdjęcie panoramiczne (najlepiej 21:9, np. 2100×900 px)',
+    imageCaption: 'Podpis / autor zdjęcia',
+    postLead: 'Lead (krótkie wprowadzenie, wyróżnione)',
+    postBody: 'Treść (pusta linia = nowy akapit)',
+    links: 'Linki',
+    showMore: 'Czytaj więcej',
+    showLess: 'Zwiń',
     about: 'O mnie',
     work: 'Działalność',
     awards: 'Nagrody',
@@ -366,6 +401,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private syncedDraftJson = '';
   private draftTimer?: ReturnType<typeof setTimeout>;
   private draftSync: Promise<void> | null = null;
+  private readonly expandedPosts = new Set<NewsPost>();
   /** Which image field is being uploaded, e.g. "work-2" or "about". */
   uploadingKey: string | null = null;
   versions: ContentVersion[] = [];
@@ -385,6 +421,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   readonly localizedContent = this.contentService.content;
   readonly content = computed(() => this.previewContent() ?? this.localizedContent()[this.activeLanguage()]);
+  readonly visibleNewsPosts = computed(() => (this.content().news?.items ?? []).filter((post) => !post.hidden));
   readonly visibleWorkItems = computed(() => this.content().work.items.filter((item) => !item.hidden));
   readonly visibleAwardItems = computed(() => this.content().awards.items.filter((item) => !item.hidden));
   readonly contactLinks = computed(() => (this.content().contact.links ?? []).filter((link) => link.url));
@@ -499,7 +536,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   updateActiveSection() {
-    const sections = ['home', 'about', 'work', 'awards', 'contact'];
+    const sections = ['home', 'news', 'about', 'work', 'awards', 'contact'];
     for (const section of sections) {
       const element = document.getElementById(section);
       if (element) {
@@ -807,8 +844,55 @@ export class AppComponent implements OnInit, OnDestroy {
     [items[index], items[target]] = [items[target], items[index]];
   }
 
+  /** News is shown only when it has at least one visible post. */
   isSectionVisible(section: SectionId): boolean {
+    if (section === 'news') {
+      return !this.content().news.hidden && this.visibleNewsPosts().length > 0;
+    }
     return !this.content()[section].hidden;
+  }
+
+  addNewsPost() {
+    // Newest first: a new post goes to the top of the list.
+    this.editableContent.news.items.unshift(this.createNewsPost());
+    this.scheduleDraftSave();
+  }
+
+  removeNewsPost(index: number) {
+    this.editableContent.news.items.splice(index, 1);
+  }
+
+  addPostLink(post: NewsPost) {
+    post.links = [...(post.links ?? []), { label: '', url: '' }];
+  }
+
+  removePostLink(post: NewsPost, index: number) {
+    post.links?.splice(index, 1);
+  }
+
+  /** Paragraphs of a post body, split on empty lines. */
+  paragraphsOf(text: string): string[] {
+    return text
+      .split(/\n\s*\n/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean);
+  }
+
+  /** Long posts are collapsed on the site until "Read more" is clicked. */
+  isLongPost(post: NewsPost): boolean {
+    return post.body.length > NEWS_COLLAPSE_LENGTH;
+  }
+
+  isPostExpanded(post: NewsPost): boolean {
+    return this.expandedPosts.has(post);
+  }
+
+  togglePost(post: NewsPost) {
+    if (this.expandedPosts.has(post)) {
+      this.expandedPosts.delete(post);
+    } else {
+      this.expandedPosts.add(post);
+    }
   }
 
   telHref(phone: string): string {
@@ -1013,6 +1097,24 @@ export class AppComponent implements OnInit, OnDestroy {
       videoLabel: '',
       linkUrl: '',
       linkLabel: '',
+      hidden: false
+    };
+  }
+
+  private createNewsPost(): NewsPost {
+    return {
+      title: this.ui().newPostTitle,
+      date: new Date().toLocaleDateString(this.activeLanguage() === 'pl' ? 'pl-PL' : 'en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }),
+      lead: '',
+      body: '',
+      imageUrl: '',
+      imageAlt: '',
+      imageCaption: '',
+      links: [],
       hidden: false
     };
   }

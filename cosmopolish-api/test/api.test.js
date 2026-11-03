@@ -89,7 +89,8 @@ describe('CosmoPolish API', () => {
   it('saves content and serves it publicly', async () => {
     const content = {
       hero: { title: 'Test' },
-      work: { items: [{ title: 'Film', imageUrl: '/uploads/a.jpg', videoUrl: 'https://youtu.be/x' }] }
+      work: { items: [{ title: 'Film', imageUrl: '/uploads/a.jpg', videoUrl: 'https://youtu.be/x' }] },
+      news: { items: [{ title: 'Post', body: '', imageUrl: '/assets/news-welcome.jpg' }] }
     };
     const put = await json('/api/content/pl', {
       method: 'PUT',
@@ -106,7 +107,7 @@ describe('CosmoPolish API', () => {
 
   it('rejects dangerous URLs and unknown languages', async () => {
     const headers = { authorization: `Bearer ${token}` };
-    for (const videoUrl of ['javascript:alert(1)', 'data:text/html,hi']) {
+    for (const videoUrl of ['javascript:alert(1)', 'data:text/html,hi', '/assets/../data/users.json', '/other/x.jpg']) {
       const res = await json('/api/content/en', {
         method: 'PUT',
         headers,
